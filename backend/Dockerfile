@@ -10,7 +10,7 @@ RUN composer install \
     --no-progress \
     --optimize-autoloader
 
-FROM php:8.3-fpm-alpine AS runner
+FROM php:8.4-fpm-alpine AS runner
 WORKDIR /var/www/html
 
 RUN apk add --no-cache \
