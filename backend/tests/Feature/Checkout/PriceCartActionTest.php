@@ -29,7 +29,7 @@ class PriceCartActionTest extends TestCase
 
         $quote = (new PriceCartAction)->execute(
             items: [['product_variant_id' => $variant->id, 'quantity' => 2]],
-            preorderDateId: $preorderDate->id,
+            orderDate: $preorderDate->order_date->toDateString(),
             fulfilmentMethod: 'pickup',
         );
 
@@ -50,7 +50,7 @@ class PriceCartActionTest extends TestCase
 
         $quote = (new PriceCartAction)->execute(
             items: [['product_variant_id' => $variant->id, 'quantity' => 1]],
-            preorderDateId: $preorderDate->id,
+            orderDate: $preorderDate->order_date->toDateString(),
             fulfilmentMethod: 'pickup',
         );
 
@@ -66,7 +66,7 @@ class PriceCartActionTest extends TestCase
         $this->expectException(HttpException::class);
         (new PriceCartAction)->execute(
             items: [['product_variant_id' => $variant->id, 'quantity' => 1]],
-            preorderDateId: $preorderDate->id,
+            orderDate: $preorderDate->order_date->toDateString(),
             fulfilmentMethod: 'pickup',
         );
     }
@@ -80,7 +80,7 @@ class PriceCartActionTest extends TestCase
         $this->expectException(HttpException::class);
         (new PriceCartAction)->execute(
             items: [['product_variant_id' => $variant->id, 'quantity' => 1]],
-            preorderDateId: $preorderDate->id,
+            orderDate: $preorderDate->order_date->toDateString(),
             fulfilmentMethod: 'pickup',
         );
     }
@@ -94,7 +94,7 @@ class PriceCartActionTest extends TestCase
 
         $quote = (new PriceCartAction)->execute(
             items: [['product_variant_id' => $variant->id, 'quantity' => 1]],
-            preorderDateId: $preorderDate->id,
+            orderDate: $preorderDate->order_date->toDateString(),
             fulfilmentMethod: 'delivery',
             deliveryZoneId: $zone->id,
         );

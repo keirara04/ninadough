@@ -25,12 +25,17 @@ class CreateOrderActionTest extends TestCase
 
         return array_merge([
             'items' => [['product_variant_id' => $variant->id, 'quantity' => 1]],
-            'preorder_date_id' => $preorderDate->id,
+            'preorder_date' => $preorderDate->order_date->toDateString(),
             'checkout_channel' => 'website',
             'fulfilment_method' => 'pickup',
             'idempotency_key' => (string) Str::uuid(),
             'customer' => ['name' => 'Test Customer', 'phone_e164' => '+60123456789'],
         ], $overrides);
+    }
+
+    private function preorderDateFor(array $payload): PreorderDate
+    {
+        return PreorderDate::whereDate('order_date', $payload['preorder_date'])->firstOrFail();
     }
 
     public function test_creates_website_order_with_correct_totals_and_reserves_capacity(): void
@@ -43,7 +48,7 @@ class CreateOrderActionTest extends TestCase
         $this->assertSame('awaiting_payment', $order->payment_status);
         $this->assertSame(3600, $order->total_sen);
         $this->assertSame(1, $order->items()->count());
-        $this->assertSame(1, PreorderDate::find($payload['preorder_date_id'])->reserved_capacity);
+        $this->assertSame(1, $this->preorderDateFor($payload)->reserved_capacity);
         $this->assertSame(1, $order->statusEvents()->count());
     }
 
@@ -69,13 +74,13 @@ class CreateOrderActionTest extends TestCase
 
         $this->assertSame($first->id, $second->id);
         $this->assertSame(1, Order::count());
-        $this->assertSame(1, PreorderDate::find($payload['preorder_date_id'])->reserved_capacity);
+        $this->assertSame(1, $this->preorderDateFor($payload)->reserved_capacity);
     }
 
     public function test_throws_and_creates_nothing_when_date_is_full(): void
     {
         $payload = $this->makePayload();
-        PreorderDate::where('id', $payload['preorder_date_id'])->update(['reserved_capacity' => 10, 'capacity_limit' => 10]);
+        $this->preorderDateFor($payload)->update(['reserved_capacity' => 10, 'capacity_limit' => 10]);
 
         $this->expectException(PreorderDateFullException::class);
 

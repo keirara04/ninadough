@@ -77,7 +77,7 @@ class CapacityConcurrencyTest extends TestCase
             }
 
             if ($pid === 0) {
-                $this->runChild($i, $variant->id, $preorderDate->id, $resultDir);
+                $this->runChild($i, $variant->id, $preorderDate->order_date->toDateString(), $resultDir);
                 exit(0);
             }
 
@@ -109,7 +109,7 @@ class CapacityConcurrencyTest extends TestCase
         $this->assertLessThanOrEqual($finalDate->capacity_limit, $finalDate->reserved_capacity);
     }
 
-    private function runChild(int $index, int $variantId, int $preorderDateId, string $resultDir): void
+    private function runChild(int $index, int $variantId, string $orderDate, string $resultDir): void
     {
         // Child process: force a brand new physical connection, never reuse
         // the parent's (already-closed) socket/handle.
@@ -120,7 +120,7 @@ class CapacityConcurrencyTest extends TestCase
         try {
             (new CreateOrderAction)->execute([
                 'items' => [['product_variant_id' => $variantId, 'quantity' => 1]],
-                'preorder_date_id' => $preorderDateId,
+                'preorder_date' => $orderDate,
                 'checkout_channel' => 'website',
                 'fulfilment_method' => 'pickup',
                 'idempotency_key' => (string) Str::uuid(),

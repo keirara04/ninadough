@@ -24,7 +24,7 @@ class OrderApiTest extends TestCase
 
         return array_merge([
             'items' => [['product_variant_id' => $variant->id, 'quantity' => 1]],
-            'preorder_date_id' => $preorderDate->id,
+            'preorder_date' => $preorderDate->order_date->toDateString(),
             'checkout_channel' => 'website',
             'fulfilment_method' => 'pickup',
             'idempotency_key' => (string) Str::uuid(),
@@ -69,7 +69,7 @@ class OrderApiTest extends TestCase
     public function test_returns_409_when_date_is_full(): void
     {
         $payload = $this->makeOrderPayload();
-        PreorderDate::where('id', $payload['preorder_date_id'])->update(['reserved_capacity' => 10, 'capacity_limit' => 10]);
+        PreorderDate::whereDate('order_date', $payload['preorder_date'])->update(['reserved_capacity' => 10, 'capacity_limit' => 10]);
 
         $response = $this->postJson('/api/v1/orders', $payload);
 
@@ -84,7 +84,7 @@ class OrderApiTest extends TestCase
 
         $response = $this->postJson('/api/v1/orders', $this->makeOrderPayload([
             'items' => [['product_variant_id' => $variant->id, 'quantity' => 1]],
-            'preorder_date_id' => $preorderDate->id,
+            'preorder_date' => $preorderDate->order_date->toDateString(),
         ]));
 
         $response->assertStatus(422);

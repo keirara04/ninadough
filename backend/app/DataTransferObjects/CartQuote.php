@@ -38,7 +38,6 @@ readonly class CartQuote
             'total_sen' => $this->totalSen,
             'total_capacity_units' => $this->totalCapacityUnits,
             'preorder_date' => [
-                'id' => $this->preorderDateId,
                 'order_date' => $this->orderDate,
                 'remaining_capacity' => $this->remainingCapacity,
                 'cutoff_at' => $this->cutoffAt,

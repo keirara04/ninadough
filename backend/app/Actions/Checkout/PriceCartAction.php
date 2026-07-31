@@ -15,11 +15,11 @@ class PriceCartAction
      */
     public function execute(
         array $items,
-        int $preorderDateId,
+        string $orderDate,
         string $fulfilmentMethod,
         ?int $deliveryZoneId = null,
     ): CartQuote {
-        $preorderDate = PreorderDate::find($preorderDateId);
+        $preorderDate = PreorderDate::whereDate('order_date', $orderDate)->first();
 
         if (! $preorderDate) {
             throw new PreorderDateUnavailableException;

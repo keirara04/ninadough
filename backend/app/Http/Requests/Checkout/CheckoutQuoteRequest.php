@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Checkout;
 
+use App\Rules\PreorderDateExists;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CheckoutQuoteRequest extends FormRequest
@@ -17,7 +18,7 @@ class CheckoutQuoteRequest extends FormRequest
             'items' => ['required', 'array', 'min:1'],
             'items.*.product_variant_id' => ['required', 'integer', 'exists:product_variants,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'preorder_date_id' => ['required', 'integer', 'exists:preorder_dates,id'],
+            'preorder_date' => ['required', 'date_format:Y-m-d', new PreorderDateExists],
             'fulfilment_method' => ['required', 'string', 'in:pickup,delivery'],
             'delivery_zone_id' => ['required_if:fulfilment_method,delivery', 'nullable', 'integer', 'exists:delivery_zones,id'],
         ];

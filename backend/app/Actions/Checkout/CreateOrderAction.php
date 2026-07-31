@@ -22,7 +22,7 @@ class CreateOrderAction
     /**
      * @param  array{
      *     items: array<int, array{product_variant_id: int, quantity: int}>,
-     *     preorder_date_id: int,
+     *     preorder_date: string,
      *     checkout_channel: string,
      *     fulfilment_method: string,
      *     delivery_zone_id?: int|null,
@@ -40,7 +40,7 @@ class CreateOrderAction
 
         $quote = $this->priceCartAction->execute(
             items: $payload['items'],
-            preorderDateId: $payload['preorder_date_id'],
+            orderDate: $payload['preorder_date'],
             fulfilmentMethod: $payload['fulfilment_method'],
             deliveryZoneId: $payload['delivery_zone_id'] ?? null,
         );
@@ -49,7 +49,7 @@ class CreateOrderAction
             try {
                 return DB::transaction(function () use ($payload, $quote) {
                     $this->reserveCapacityAction->execute(
-                        $payload['preorder_date_id'],
+                        $quote->preorderDateId,
                         $quote->totalCapacityUnits,
                         $payload['fulfilment_method'],
                     );
@@ -66,7 +66,7 @@ class CreateOrderAction
                         'ulid' => (string) Str::ulid(),
                         'order_number' => $this->generateOrderNumber(),
                         'customer_id' => $customer->id,
-                        'preorder_date_id' => $payload['preorder_date_id'],
+                        'preorder_date_id' => $quote->preorderDateId,
                         'checkout_channel' => $payload['checkout_channel'],
                         'fulfilment_method' => $payload['fulfilment_method'],
                         'delivery_zone_id' => $payload['delivery_zone_id'] ?? null,

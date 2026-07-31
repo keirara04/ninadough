@@ -51,7 +51,7 @@ class CheckoutApiTest extends TestCase
 
         $response = $this->postJson('/api/v1/checkout/quote', [
             'items' => [['product_variant_id' => $variant->id, 'quantity' => 2, 'unit_price_sen' => 1]],
-            'preorder_date_id' => $preorderDate->id,
+            'preorder_date' => $preorderDate->order_date->toDateString(),
             'fulfilment_method' => 'pickup',
         ]);
 
@@ -68,7 +68,7 @@ class CheckoutApiTest extends TestCase
 
         $response = $this->postJson('/api/v1/checkout/quote', [
             'items' => [['product_variant_id' => $variant->id, 'quantity' => 1]],
-            'preorder_date_id' => $preorderDate->id,
+            'preorder_date' => $preorderDate->order_date->toDateString(),
             'fulfilment_method' => 'delivery',
         ]);
 
@@ -85,7 +85,7 @@ class CheckoutApiTest extends TestCase
 
         $response = $this->postJson('/api/v1/checkout/quote', [
             'items' => [['product_variant_id' => $variant->id, 'quantity' => 1]],
-            'preorder_date_id' => $preorderDate->id,
+            'preorder_date' => $preorderDate->order_date->toDateString(),
             'fulfilment_method' => 'delivery',
             'delivery_zone_id' => $zone->id,
         ]);

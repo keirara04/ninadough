@@ -15,7 +15,7 @@ class CheckoutQuoteController extends Controller
 
         $quote = $priceCartAction->execute(
             items: $data['items'],
-            preorderDateId: $data['preorder_date_id'],
+            orderDate: $data['preorder_date'],
             fulfilmentMethod: $data['fulfilment_method'],
             deliveryZoneId: $data['delivery_zone_id'] ?? null,
         );
