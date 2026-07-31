@@ -68,7 +68,7 @@ jobs:
       - uses: shivammathur/setup-php@v2
         with:
           php-version: "8.4"
-          extensions: pdo, pdo_pgsql, pgsql, intl, opcache
+          extensions: pdo, pdo_pgsql, pgsql, intl, opcache, pcntl
           coverage: none
 
       - name: Install Composer dependencies
@@ -87,3 +87,11 @@ jobs:
 
       - name: Run test suite
         run: php artisan test
+
+      - name: Create concurrency test database
+        run: PGPASSWORD=ninadough psql -h 127.0.0.1 -U ninadough -d ninadough_ci -c "CREATE DATABASE ninadough_concurrency_ci"
+
+      - name: Run capacity-lock concurrency test (real Postgres, forked processes)
+        env:
+          DB_DATABASE: ninadough_concurrency_ci
+        run: vendor/bin/phpunit -c phpunit.concurrency.xml
