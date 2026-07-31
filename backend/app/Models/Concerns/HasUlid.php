@@ -1,4 +1,5 @@
 <?php
+
 // backend/app/Models/Concerns/HasUlid.php
 
 namespace App\Models\Concerns;
