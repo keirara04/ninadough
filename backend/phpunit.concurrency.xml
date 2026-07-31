@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+         processIsolation="false"
+>
+    <!--
+        Dedicated config for the capacity-lock concurrency test
+        (tests/Concurrency). This test forks real child processes to prove
+        Postgres row-locking prevents overbooking, so it needs a real,
+        disposable Postgres database — the default phpunit.xml sqlite
+        :memory: suite cannot be shared across forked processes.
+
+        Run with: vendor/bin/phpunit -c phpunit.concurrency.xml
+        Requires: `createdb ninadough_concurrency_test` (or the equivalent
+        CREATE DATABASE) against the same Postgres server/user as .env.
+    -->
+    <testsuites>
+        <testsuite name="Concurrency">
+            <directory>tests/Concurrency</directory>
+        </testsuite>
+    </testsuites>
+    <php>
+        <env name="APP_ENV" value="testing"/>
+        <env name="BCRYPT_ROUNDS" value="4"/>
+        <env name="CACHE_STORE" value="array"/>
+        <env name="DB_CONNECTION" value="pgsql"/>
+        <env name="DB_DATABASE" value="ninadough_concurrency_test"/>
+        <env name="DB_URL" value=""/>
+        <env name="MAIL_MAILER" value="array"/>
+        <env name="QUEUE_CONNECTION" value="sync"/>
+        <env name="SESSION_DRIVER" value="array"/>
+    </php>
+</phpunit>

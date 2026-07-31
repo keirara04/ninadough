@@ -17,8 +17,12 @@ class ReservePreorderCapacityAction
     {
         $date = PreorderDate::whereKey($preorderDateId)->lockForUpdate()->first();
 
-        if (! $date || $date->status !== 'open') {
+        if (! $date || $date->status === 'closed') {
             throw new PreorderDateUnavailableException;
+        }
+
+        if ($date->status === 'full' || $date->reserved_capacity + $units > $date->capacity_limit) {
+            throw new PreorderDateFullException;
         }
 
         if (now()->greaterThanOrEqualTo($date->cutoff_at)) {
@@ -31,10 +35,6 @@ class ReservePreorderCapacityAction
 
         if ($fulfilmentMethod === 'pickup' && ! $date->pickup_enabled) {
             throw new PreorderDateUnavailableException;
-        }
-
-        if ($date->reserved_capacity + $units > $date->capacity_limit) {
-            throw new PreorderDateFullException;
         }
 
         $date->reserved_capacity += $units;
