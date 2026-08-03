@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { DatePickerModal } from "@/components/DatePickerModal";
 import { getItemCount, getSubtotalSen, useCartStore, type FulfilmentMethod } from "@/lib/cart-store";
@@ -9,6 +10,7 @@ import type { PreorderDate } from "@/lib/types";
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
 
 export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) {
+  const router = useRouter();
   const items = useCartStore((state) => state.items);
   const preorderDate = useCartStore((state) => state.preorderDate);
   const fulfilmentMethod = useCartStore((state) => state.fulfilmentMethod);
@@ -16,6 +18,8 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
   const removeItem = useCartStore((state) => state.removeItem);
   const setPreorderDate = useCartStore((state) => state.setPreorderDate);
   const setFulfilmentMethod = useCartStore((state) => state.setFulfilmentMethod);
+  const isCollapsed = useCartStore((state) => state.isCartCollapsed);
+  const setIsCollapsed = useCartStore((state) => state.setCartCollapsed);
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
@@ -28,21 +32,49 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
   const subtotalSen = getSubtotalSen(items);
   const selectedDate = preorderDates.find((date) => date.order_date === preorderDate);
 
+  if (isCollapsed) {
+    return (
+      <button
+        id="cart-sheet"
+        type="button"
+        onClick={() => setIsCollapsed(false)}
+        className="sticky bottom-4 z-10 mx-auto flex min-h-11 w-[calc(100%-2rem)] max-w-md items-center justify-between rounded-full bg-brand-cocoa px-5 text-sm font-semibold text-white shadow-lg lg:max-w-lg"
+      >
+        <span>Your order ({itemCount})</span>
+        <span>{formatSen(subtotalSen)}</span>
+      </button>
+    );
+  }
+
   return (
     <>
-      <div className="sticky bottom-0 z-10 rounded-t-2xl border-t border-brand-cocoa/10 bg-white px-4 pb-4 pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)]">
-        <button
-          type="button"
-          onClick={() => setIsExpanded((prev) => !prev)}
-          className="mb-2 flex w-full items-center justify-between"
-        >
-          <span className="flex items-center gap-2 font-[family-name:var(--font-display)] font-semibold text-brand-cocoa">
+      <div
+        id="cart-sheet"
+        className="sticky bottom-0 z-10 rounded-t-2xl border-t border-brand-cocoa/10 bg-white px-4 pb-4 pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] sm:px-6 lg:px-8"
+      >
+        <div className="mx-auto w-full max-w-md lg:max-w-lg">
+        <div className="mb-2 flex w-full items-center justify-between">
+          <button
+            type="button"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="flex items-center gap-2 font-display font-semibold text-brand-cocoa"
+          >
             Your order ({itemCount})
-          </span>
-          <span className="text-sm font-medium text-brand-pink">
-            {isExpanded ? "Hide" : "Edit"}
-          </span>
-        </button>
+            <span className="text-sm font-medium text-brand-pink">
+              {isExpanded ? "Hide" : "Edit"}
+            </span>
+          </button>
+          <button
+            type="button"
+            aria-label="Minimize cart"
+            onClick={() => setIsCollapsed(true)}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-brand-cocoa/50"
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
+              <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+            </svg>
+          </button>
+        </div>
 
         {isExpanded && (
           <ul className="mb-3 flex max-h-40 flex-col gap-2 overflow-y-auto">
@@ -123,6 +155,15 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
           ))}
         </div>
 
+        <button
+          type="button"
+          disabled={!selectedDate}
+          onClick={() => router.push("/checkout")}
+          className="mb-2 min-h-11 w-full rounded-full bg-brand-cocoa text-sm font-semibold text-white disabled:opacity-40"
+        >
+          Checkout
+        </button>
+
         {WHATSAPP_NUMBER && (
           <a
             href={`https://wa.me/${WHATSAPP_NUMBER}`}
@@ -133,6 +174,7 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
             Custom orders? Chat with us on WhatsApp
           </a>
         )}
+        </div>
       </div>
 
       {isDatePickerOpen && (

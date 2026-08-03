@@ -13,6 +13,8 @@ class OrderStatusResource extends JsonResource
             'order_number' => $this->order_number,
             'status' => $this->status,
             'payment_status' => $this->payment_status,
+            'total_sen' => $this->total_sen,
+            'awaiting_proof' => $this->payment_status === 'awaiting_payment',
             'updated_at' => $this->updated_at->toIso8601String(),
         ];
     }

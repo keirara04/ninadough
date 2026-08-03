@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\Product;
 use App\Models\ProductImage;
-use App\Models\ProductOptionGroup;
 use App\Models\ProductOptionValue;
 use App\Models\ProductVariant;
 use Illuminate\Database\Seeder;
@@ -19,9 +18,15 @@ class ProductSeeder extends Seeder
             'base_price_sen' => 8000,
         ]);
 
-        ProductImage::factory()->for($product)->create(['is_primary' => true]);
+        ProductImage::factory()->for($product)->create([
+            'is_primary' => true,
+            'public_url' => 'https://picsum.photos/seed/cake-chocolate-fudge/800/800',
+            'alt_text' => $product->name,
+        ]);
 
-        $sizeGroup = ProductOptionGroup::factory()->for($product)->create(['name' => 'Size']);
+        $sizeGroup = $product->optionGroups()->create([
+            'name' => 'Size', 'selection_type' => 'single', 'is_required' => true, 'sort_order' => 0,
+        ]);
         $small = ProductOptionValue::factory()->for($sizeGroup, 'productOptionGroup')->create([
             'name' => 'Small (6")', 'value_code' => 'small',
         ]);

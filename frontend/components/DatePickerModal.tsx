@@ -29,10 +29,11 @@ export function DatePickerModal({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-30 flex items-end bg-black/40 sm:items-center sm:justify-center">
-      <div className="max-h-[80vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-w-sm sm:rounded-2xl">
+    <div className="animate-fade-in fixed inset-0 z-30 flex items-end bg-black/40 sm:items-center sm:justify-center">
+      <div className="animate-slide-up max-h-[80vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-w-sm sm:rounded-2xl">
+
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-[family-name:var(--font-display)] text-lg font-semibold text-brand-cocoa">
+          <h2 className="font-display text-lg font-semibold text-brand-cocoa">
             Choose order date
           </h2>
           <button
@@ -61,9 +62,9 @@ export function DatePickerModal({
                   type="button"
                   disabled={!isOrderable}
                   onClick={() => onSelect(date)}
-                  className={`flex w-full min-h-11 items-center justify-between rounded-xl border px-3 py-2 text-left ${
+                  className={`flex w-full min-h-11 items-center justify-between rounded-xl border px-3 py-2 text-left transition active:scale-[0.98] ${
                     isOrderable
-                      ? "border-brand-cocoa/15 text-brand-cocoa"
+                      ? "border-brand-cocoa/15 text-brand-cocoa hover:border-brand-pink/40 hover:bg-brand-cream/50"
                       : "border-brand-cocoa/10 text-brand-cocoa/40"
                   }`}
                 >

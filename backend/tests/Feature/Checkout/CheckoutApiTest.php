@@ -5,6 +5,7 @@ namespace Tests\Feature\Checkout;
 use App\Models\DeliveryZone;
 use App\Models\PreorderDate;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\ProductImage;
 use App\Models\ProductVariant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,7 +17,13 @@ class CheckoutApiTest extends TestCase
 
     public function test_lists_only_active_products_with_variants_and_images(): void
     {
-        $active = Product::factory()->create(['is_active' => true, 'name' => 'Active Cake']);
+        $category = ProductCategory::factory()->create(['name' => 'Cakes']);
+        $active = Product::factory()->create([
+            'is_active' => true,
+            'name' => 'Active Cake',
+            'is_featured' => true,
+            'category_id' => $category->id,
+        ]);
         ProductImage::factory()->for($active)->create(['is_primary' => true, 'public_url' => 'https://cdn.test/a.jpg']);
         ProductVariant::factory()->for($active)->create(['is_active' => true]);
         Product::factory()->create(['is_active' => false, 'name' => 'Hidden Cake']);
@@ -27,6 +34,8 @@ class CheckoutApiTest extends TestCase
         $response->assertJsonCount(1, 'data');
         $response->assertJsonPath('data.0.name', 'Active Cake');
         $response->assertJsonPath('data.0.images.0.url', 'https://cdn.test/a.jpg');
+        $response->assertJsonPath('data.0.is_featured', true);
+        $response->assertJsonPath('data.0.category.name', 'Cakes');
     }
 
     public function test_lists_upcoming_preorder_dates_with_remaining_capacity(): void

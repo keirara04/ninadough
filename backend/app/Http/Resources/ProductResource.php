@@ -17,6 +17,12 @@ class ProductResource extends JsonResource
             'description' => $this->description,
             'base_price_sen' => $this->base_price_sen,
             'allergen_information' => $this->allergen_information,
+            'is_featured' => $this->is_featured,
+            'category' => $this->category ? [
+                'id' => $this->category->id,
+                'name' => $this->category->name,
+                'slug' => $this->category->slug,
+            ] : null,
             'images' => $this->images->map(fn ($image) => [
                 'url' => $image->public_url,
                 'alt_text' => $image->alt_text,

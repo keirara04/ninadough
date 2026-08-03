@@ -17,6 +17,9 @@ interface CartState {
   items: CartItem[];
   preorderDate: string | null;
   fulfilmentMethod: FulfilmentMethod;
+  idempotencyKey: string;
+  isCartCollapsed: boolean;
+  setCartCollapsed: (collapsed: boolean) => void;
   addItem: (item: Omit<CartItem, "quantity">) => void;
   updateQuantity: (variantId: number, quantity: number) => void;
   removeItem: (variantId: number) => void;
@@ -31,6 +34,9 @@ export const useCartStore = create<CartState>()(
       items: [],
       preorderDate: null,
       fulfilmentMethod: "pickup",
+      idempotencyKey: crypto.randomUUID(),
+      isCartCollapsed: false,
+      setCartCollapsed: (collapsed) => set({ isCartCollapsed: collapsed }),
 
       addItem: (item) =>
         set((state) => {
@@ -38,6 +44,7 @@ export const useCartStore = create<CartState>()(
 
           if (existing) {
             return {
+              isCartCollapsed: false,
               items: state.items.map((line) =>
                 line.variantId === item.variantId
                   ? { ...line, quantity: line.quantity + 1 }
@@ -46,7 +53,7 @@ export const useCartStore = create<CartState>()(
             };
           }
 
-          return { items: [...state.items, { ...item, quantity: 1 }] };
+          return { items: [...state.items, { ...item, quantity: 1 }], isCartCollapsed: false };
         }),
 
       updateQuantity: (variantId, quantity) =>
@@ -66,7 +73,13 @@ export const useCartStore = create<CartState>()(
 
       setPreorderDate: (date) => set({ preorderDate: date }),
       setFulfilmentMethod: (method) => set({ fulfilmentMethod: method }),
-      clear: () => set({ items: [], preorderDate: null, fulfilmentMethod: "pickup" }),
+      clear: () =>
+        set({
+          items: [],
+          preorderDate: null,
+          fulfilmentMethod: "pickup",
+          idempotencyKey: crypto.randomUUID(),
+        }),
     }),
     { name: "ninadough-cart" },
   ),

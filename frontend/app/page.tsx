@@ -1,25 +1,22 @@
-import { CartSheet } from "@/components/CartSheet";
 import { HeroBanner } from "@/components/HeroBanner";
-import { ProductGrid } from "@/components/ProductGrid";
-import { StorefrontHeader } from "@/components/StorefrontHeader";
-import { getPreorderDates, getProducts } from "@/lib/api";
+import { Storefront } from "@/components/Storefront";
+import { StorefrontChrome } from "@/components/StorefrontChrome";
+import { TrustSection } from "@/components/TrustSection";
+import { getCategories, getProducts } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [products, preorderDates] = await Promise.all([
+  const [products, categories] = await Promise.all([
     getProducts(),
-    getPreorderDates(),
+    getCategories().catch(() => []),
   ]);
 
   return (
-    <div className="flex flex-1 flex-col">
-      <StorefrontHeader />
+    <StorefrontChrome>
       <HeroBanner />
-      <main className="flex-1">
-        <ProductGrid products={products} />
-      </main>
-      <CartSheet preorderDates={preorderDates} />
-    </div>
+      <Storefront products={products} categories={categories} />
+      <TrustSection />
+    </StorefrontChrome>
   );
 }

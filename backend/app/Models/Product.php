@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable([
     'name', 'slug', 'short_description', 'description', 'base_price_sen',
     'default_capacity_units', 'is_active', 'is_featured', 'sort_order',
-    'allergen_information',
+    'allergen_information', 'category_id',
 ])]
 class Product extends Model
 {
@@ -25,6 +25,11 @@ class Product extends Model
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
         ];
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(ProductCategory::class, 'category_id');
     }
 
     public function images()

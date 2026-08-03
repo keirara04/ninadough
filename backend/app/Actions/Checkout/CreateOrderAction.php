@@ -8,6 +8,7 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderItemOptionValue;
 use App\Models\OrderStatusEvent;
+use App\Models\Payment;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -118,6 +119,16 @@ class CreateOrderAction
                         'to_status' => $order->status,
                         'actor_type' => 'system',
                     ]);
+
+                    if (! $isWhatsapp) {
+                        Payment::create([
+                            'order_id' => $order->id,
+                            'method' => 'bank_transfer',
+                            'amount_sen' => $order->total_sen,
+                            'currency' => 'MYR',
+                            'status' => 'pending',
+                        ]);
+                    }
 
                     return $order;
                 });

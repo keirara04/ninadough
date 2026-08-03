@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { useCartStore } from "@/lib/cart-store";
 import { formatSen } from "@/lib/format";
@@ -12,6 +13,7 @@ export function ProductCard({ product }: { product: Product }) {
     product.variants[0]?.id ?? null,
   );
   const [isFavourited, setIsFavourited] = useState(false);
+  const [justAdded, setJustAdded] = useState(false);
 
   const selectedVariant =
     product.variants.find((variant) => variant.id === selectedVariantId) ??
@@ -24,39 +26,41 @@ export function ProductCard({ product }: { product: Product }) {
   }
 
   return (
-    <div className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm">
-      <div className="relative aspect-square w-full bg-brand-cream">
-        {primaryImage?.url ? (
-          <Image
-            src={primaryImage.url}
-            alt={primaryImage.alt_text ?? product.name}
-            fill
-            sizes="(max-width: 640px) 50vw, 300px"
-            className="object-cover"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-brand-cocoa/30">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-12 w-12">
-              <rect x="3" y="3" width="18" height="18" rx="2" />
-              <circle cx="8.5" cy="8.5" r="1.5" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="m21 15-5-5L5 21" />
-            </svg>
-          </div>
-        )}
+    <div className="group flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm transition-shadow duration-200 hover:shadow-md">
+      <div className="relative aspect-square w-full overflow-hidden bg-brand-cream">
+        <Link href={`/products/${product.slug}`} className="block h-full w-full">
+          {primaryImage?.url ? (
+            <Image
+              src={primaryImage.url}
+              alt={primaryImage.alt_text ?? product.name}
+              fill
+              sizes="(max-width: 640px) 50vw, 300px"
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-brand-cocoa/30">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} className="h-12 w-12">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 15-5-5L5 21" />
+              </svg>
+            </div>
+          )}
+        </Link>
 
         <button
           type="button"
           aria-label={isFavourited ? "Remove from favourites" : "Add to favourites"}
           aria-pressed={isFavourited}
           onClick={() => setIsFavourited((prev) => !prev)}
-          className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90"
+          className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 transition-transform active:scale-90"
         >
           <svg
             viewBox="0 0 24 24"
             fill={isFavourited ? "currentColor" : "none"}
             stroke="currentColor"
             strokeWidth={2}
-            className="h-5 w-5 text-brand-pink"
+            className={`h-5 w-5 text-brand-pink transition-transform ${isFavourited ? "scale-110" : ""}`}
           >
             <path
               strokeLinecap="round"
@@ -68,9 +72,11 @@ export function ProductCard({ product }: { product: Product }) {
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-3">
-        <h3 className="font-[family-name:var(--font-display)] text-sm font-semibold text-brand-cocoa">
-          {product.name}
-        </h3>
+        <Link href={`/products/${product.slug}`}>
+          <h3 className="font-display text-sm font-semibold text-brand-cocoa hover:text-brand-pink">
+            {product.name}
+          </h3>
+        </Link>
 
         {product.variants.length > 1 && (
           <div>
@@ -81,7 +87,7 @@ export function ProductCard({ product }: { product: Product }) {
                   key={variant.id}
                   type="button"
                   onClick={() => setSelectedVariantId(variant.id)}
-                  className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                  className={`rounded-full border px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
                     variant.id === selectedVariant.id
                       ? "border-brand-pink bg-brand-pink text-white"
                       : "border-brand-cocoa/20 text-brand-cocoa/80"
@@ -100,7 +106,7 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
               addItem({
                 productId: product.id,
                 variantId: selectedVariant.id,
@@ -108,11 +114,15 @@ export function ProductCard({ product }: { product: Product }) {
                 variantName: selectedVariant.option_values.join(" ") || selectedVariant.name,
                 unitPriceSen: selectedVariant.price_sen,
                 capacityUnitsEach: selectedVariant.capacity_units,
-              })
-            }
-            className="min-h-11 rounded-full bg-brand-pink px-5 text-sm font-semibold text-white"
+              });
+              setJustAdded(true);
+              setTimeout(() => setJustAdded(false), 1200);
+            }}
+            className={`min-h-11 rounded-full px-5 text-sm font-semibold text-white transition-all active:scale-95 ${
+              justAdded ? "bg-green-600" : "bg-brand-pink"
+            }`}
           >
-            Add
+            {justAdded ? "Added!" : "Add"}
           </button>
         </div>
       </div>

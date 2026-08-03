@@ -12,6 +12,8 @@ class DatabaseSeeder extends Seeder
             OwnerUserSeeder::class,
             BusinessSettingsSeeder::class,
             ProductSeeder::class,
+            ProductCategorySeeder::class,
+            MockProductSeeder::class,
             PreorderDateSeeder::class,
             DeliveryZoneSeeder::class,
             OrderDemoSeeder::class,

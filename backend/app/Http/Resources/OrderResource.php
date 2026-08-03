@@ -5,11 +5,14 @@ namespace App\Http\Resources;
 use App\Models\BusinessSetting;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\URL;
 
 class OrderResource extends JsonResource
 {
     public function toArray(Request $request): array
     {
+        $expiresAt = now()->addDay();
+
         return [
             'id' => $this->ulid,
             'order_number' => $this->order_number,
@@ -22,6 +25,16 @@ class OrderResource extends JsonResource
             'total_sen' => $this->total_sen,
             'expires_at' => $this->expires_at?->toIso8601String(),
             'whatsapp_url' => $this->checkout_channel === 'whatsapp' ? $this->buildWhatsappUrl() : null,
+            'status_url' => URL::temporarySignedRoute(
+                'orders.status',
+                $expiresAt,
+                ['reference' => $this->order_number],
+            ),
+            'payment_proof_url' => URL::temporarySignedRoute(
+                'orders.payment-proof',
+                $expiresAt,
+                ['reference' => $this->order_number],
+            ),
         ];
     }
 
