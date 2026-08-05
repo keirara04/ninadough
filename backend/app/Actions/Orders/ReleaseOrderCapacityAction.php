@@ -5,6 +5,7 @@ namespace App\Actions\Orders;
 use App\Models\Order;
 use App\Models\OrderStatusEvent;
 use App\Models\PreorderDate;
+use App\Models\TimeSlot;
 use Illuminate\Support\Facades\DB;
 
 class ReleaseOrderCapacityAction
@@ -66,5 +67,29 @@ class ReleaseOrderCapacityAction
         }
 
         $order->capacity_released_at = now();
+
+        $this->releaseTimeSlotOnly($order);
+    }
+
+    /**
+     * Releases reserved time-slot capacity for $order, guarded by
+     * slot_capacity_released_at so it only ever fires once. No-op if the
+     * order has no time slot. Does not save $order — caller is responsible.
+     * $order must already be locked by the caller.
+     */
+    private function releaseTimeSlotOnly(Order $order): void
+    {
+        if ($order->slot_capacity_released_at !== null || $order->time_slot_id === null) {
+            return;
+        }
+
+        $slot = TimeSlot::whereKey($order->time_slot_id)->lockForUpdate()->first();
+
+        if ($slot) {
+            $slot->reserved_capacity = max(0, $slot->reserved_capacity - 1);
+            $slot->save();
+        }
+
+        $order->slot_capacity_released_at = now();
     }
 }

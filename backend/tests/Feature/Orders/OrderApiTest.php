@@ -28,7 +28,7 @@ class OrderApiTest extends TestCase
             'checkout_channel' => 'website',
             'fulfilment_method' => 'pickup',
             'idempotency_key' => (string) Str::uuid(),
-            'customer' => ['name' => 'Test Customer', 'phone_e164' => '+60123456789'],
+            'customer' => ['name' => 'Test Customer', 'phone_e164' => '+60123456789', 'email' => 'test@example.com'],
         ], $overrides);
     }
 

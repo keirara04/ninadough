@@ -61,6 +61,7 @@ class AdminProductController extends Controller
             'short_description' => ['nullable', 'string', 'max:500'],
             'description' => ['nullable', 'string'],
             'base_price_sen' => ['required', 'integer', 'min:0'],
+            'min_lead_time_days' => ['nullable', 'integer', 'min:0'],
             'allergen_information' => ['nullable', 'string'],
             'category_id' => ['nullable', 'integer', 'exists:product_categories,id'],
             'is_active' => ['boolean'],

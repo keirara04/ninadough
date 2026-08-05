@@ -33,7 +33,7 @@ class AdminOrderController extends Controller
 
     public function show(Order $order): AdminOrderResource
     {
-        $order->load(['items', 'payments.proofs']);
+        $order->load(['items', 'payments.proofs', 'timeSlot']);
 
         return new AdminOrderResource($order);
     }
@@ -55,6 +55,6 @@ class AdminOrderController extends Controller
             noteInternal: $validated['note'] ?? null,
         );
 
-        return new AdminOrderResource($order->fresh(['items', 'payments.proofs']));
+        return new AdminOrderResource($order->fresh(['items', 'payments.proofs', 'timeSlot']));
     }
 }

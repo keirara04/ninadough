@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminPaymentController;
 use App\Http\Controllers\Api\Admin\AdminPaymentProofController;
 use App\Http\Controllers\Api\Admin\AdminProductController;
+use App\Http\Controllers\Api\Admin\AdminTimeSlotController;
 use App\Http\Controllers\Api\CheckoutQuoteController;
 use App\Http\Controllers\Api\DeliveryZoneController;
 use App\Http\Controllers\Api\OrderController;
@@ -13,6 +14,7 @@ use App\Http\Controllers\Api\PaymentProofController;
 use App\Http\Controllers\Api\PreorderDateController;
 use App\Http\Controllers\Api\ProductCategoryController;
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\TimeSlotController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -25,7 +27,9 @@ Route::prefix('v1')->group(function () {
     Route::get('/products/{slug}', [ProductController::class, 'show']);
     Route::get('/categories', [ProductCategoryController::class, 'index']);
     Route::get('/preorder-dates', [PreorderDateController::class, 'index']);
+    Route::get('/time-slots', [TimeSlotController::class, 'index']);
     Route::get('/delivery-zones', [DeliveryZoneController::class, 'index']);
+    Route::get('/delivery-zones/lookup', [DeliveryZoneController::class, 'lookup']);
 
     Route::middleware('throttle:checkout')->group(function () {
         Route::post('/checkout/quote', [CheckoutQuoteController::class, 'store']);
@@ -62,6 +66,11 @@ Route::prefix('v1')->group(function () {
                 Route::post('/products', [AdminProductController::class, 'store']);
                 Route::patch('/products/{product}', [AdminProductController::class, 'update']);
                 Route::delete('/products/{product}', [AdminProductController::class, 'destroy']);
+
+                Route::get('/preorder-dates/{preorderDate}/time-slots', [AdminTimeSlotController::class, 'index']);
+                Route::post('/preorder-dates/{preorderDate}/time-slots', [AdminTimeSlotController::class, 'store']);
+                Route::patch('/preorder-dates/{preorderDate}/time-slots/{timeSlot}', [AdminTimeSlotController::class, 'update']);
+                Route::delete('/preorder-dates/{preorderDate}/time-slots/{timeSlot}', [AdminTimeSlotController::class, 'destroy']);
             });
         });
     });

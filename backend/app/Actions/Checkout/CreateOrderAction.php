@@ -20,6 +20,7 @@ class CreateOrderAction
         private readonly PriceCartAction $priceCartAction = new PriceCartAction,
         private readonly ReservePreorderCapacityAction $reserveCapacityAction = new ReservePreorderCapacityAction,
         private readonly ReserveStockAction $reserveStockAction = new ReserveStockAction,
+        private readonly ReserveTimeSlotCapacityAction $reserveTimeSlotAction = new ReserveTimeSlotCapacityAction,
     ) {}
 
     /**
@@ -56,6 +57,14 @@ class CreateOrderAction
                         $payload['fulfilment_method'],
                     );
 
+                    if (! empty($payload['time_slot_id'])) {
+                        $this->reserveTimeSlotAction->execute(
+                            $payload['time_slot_id'],
+                            $quote->preorderDateId,
+                            $payload['fulfilment_method'],
+                        );
+                    }
+
                     $this->reserveStockAction->execute($payload['items']);
 
                     $customer = Customer::firstOrCreate(
@@ -71,6 +80,7 @@ class CreateOrderAction
                         'order_number' => $this->generateOrderNumber(),
                         'customer_id' => $customer->id,
                         'preorder_date_id' => $quote->preorderDateId,
+                        'time_slot_id' => $payload['time_slot_id'] ?? null,
                         'checkout_channel' => $payload['checkout_channel'],
                         'fulfilment_method' => $payload['fulfilment_method'],
                         'delivery_zone_id' => $quote->deliveryZoneId,
@@ -88,8 +98,13 @@ class CreateOrderAction
                         'total_capacity_units' => $quote->totalCapacityUnits,
                         'status' => $isWhatsapp ? 'whatsapp_pending' : 'awaiting_payment',
                         'payment_status' => $isWhatsapp ? 'not_required' : 'awaiting_payment',
+                        'payment_method' => $payload['payment_method'] ?? null,
                         'expires_at' => $isWhatsapp ? now()->addMinutes($this->whatsappReservationMinutes()) : null,
                         'idempotency_key' => $payload['idempotency_key'],
+                        'notes' => $payload['notes'] ?? null,
+                        'card_message' => $payload['card_message'] ?? null,
+                        'allergies_note' => $payload['allergies_note'] ?? null,
+                        'hide_price_on_package' => $payload['hide_price_on_package'] ?? false,
                     ]);
 
                     foreach ($quote->lines as $sortOrder => $line) {

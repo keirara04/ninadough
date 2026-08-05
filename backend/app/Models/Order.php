@@ -9,13 +9,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
-    'ulid', 'order_number', 'customer_id', 'preorder_date_id', 'checkout_channel',
+    'ulid', 'order_number', 'customer_id', 'preorder_date_id', 'time_slot_id', 'checkout_channel',
     'fulfilment_method', 'delivery_zone_id', 'customer_name_snapshot', 'customer_phone_snapshot',
     'customer_email_snapshot', 'delivery_address', 'pickup_instruction_snapshot', 'subtotal_sen',
     'delivery_fee_sen', 'discount_sen', 'total_sen', 'total_capacity_units', 'status',
-    'payment_status', 'payment_method', 'expires_at', 'capacity_released_at', 'confirmed_at',
-    'paid_at', 'completed_at', 'idempotency_key', 'source_metadata',
+    'payment_status', 'payment_method', 'expires_at', 'capacity_released_at', 'slot_capacity_released_at',
+    'confirmed_at', 'paid_at', 'completed_at', 'idempotency_key', 'source_metadata',
     'rejection_message', 'refund_required', 'refund_note',
+    'notes', 'card_message', 'allergies_note', 'hide_price_on_package',
 ])]
 class Order extends Model
 {
@@ -32,7 +33,9 @@ class Order extends Model
             'confirmed_at' => 'datetime',
             'paid_at' => 'datetime',
             'completed_at' => 'datetime',
+            'slot_capacity_released_at' => 'datetime',
             'refund_required' => 'boolean',
+            'hide_price_on_package' => 'boolean',
         ];
     }
 
@@ -44,6 +47,11 @@ class Order extends Model
     public function preorderDate()
     {
         return $this->belongsTo(PreorderDate::class);
+    }
+
+    public function timeSlot()
+    {
+        return $this->belongsTo(TimeSlot::class);
     }
 
     public function deliveryZone()

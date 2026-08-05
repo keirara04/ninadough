@@ -4,6 +4,7 @@ namespace Tests\Feature\Inventory;
 
 use App\Actions\Checkout\CreateOrderAction;
 use App\Exceptions\InsufficientStockException;
+use App\Models\Order;
 use App\Models\PreorderDate;
 use App\Models\Product;
 use App\Models\ProductVariant;
@@ -66,7 +67,7 @@ class StockReservationTest extends TestCase
             (new CreateOrderAction)->execute($this->makePayload($variant, $preorderDate, 3));
         } finally {
             $this->assertSame(0, $variant->fresh()->reserved_quantity);
-            $this->assertSame(0, \App\Models\Order::count());
+            $this->assertSame(0, Order::count());
         }
     }
 }

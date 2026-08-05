@@ -21,6 +21,15 @@ class AdminOrderResource extends JsonResource
             'total_sen' => $this->total_sen,
             'rejection_message' => $this->rejection_message,
             'refund_required' => $this->refund_required,
+            'notes' => $this->notes,
+            'card_message' => $this->card_message,
+            'allergies_note' => $this->allergies_note,
+            'hide_price_on_package' => $this->hide_price_on_package,
+            'time_slot' => $this->whenLoaded('timeSlot', fn () => $this->timeSlot ? [
+                'label' => $this->timeSlot->label,
+                'starts_at' => substr((string) $this->timeSlot->starts_at, 0, 5),
+                'ends_at' => substr((string) $this->timeSlot->ends_at, 0, 5),
+            ] : null),
             'created_at' => $this->created_at->toIso8601String(),
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item) => [
                 'product_name' => $item->product_name_snapshot,

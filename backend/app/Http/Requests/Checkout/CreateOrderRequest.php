@@ -19,8 +19,14 @@ class CreateOrderRequest extends FormRequest
             'items.*.product_variant_id' => ['required', 'integer', 'exists:product_variants,id'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'preorder_date' => ['required', 'date_format:Y-m-d', new PreorderDateExists],
+            'time_slot_id' => ['nullable', 'integer', 'exists:time_slots,id'],
             'checkout_channel' => ['required', 'string', 'in:website,whatsapp'],
             'fulfilment_method' => ['required', 'string', 'in:pickup,delivery'],
+            'payment_method' => ['nullable', 'string', 'in:bank_transfer'],
+            'notes' => ['nullable', 'string', 'max:1000'],
+            'card_message' => ['nullable', 'string', 'max:200'],
+            'allergies_note' => ['nullable', 'string', 'max:500'],
+            'hide_price_on_package' => ['nullable', 'boolean'],
             'delivery_address' => ['required_if:fulfilment_method,delivery', 'nullable', 'array'],
             'delivery_address.recipient_name' => ['required_if:fulfilment_method,delivery', 'string', 'max:160'],
             'delivery_address.recipient_phone_e164' => ['required_if:fulfilment_method,delivery', 'string', 'max:20'],
@@ -33,7 +39,10 @@ class CreateOrderRequest extends FormRequest
             'customer' => ['required', 'array'],
             'customer.name' => ['required', 'string', 'max:160'],
             'customer.phone_e164' => ['required', 'string', 'max:20', 'regex:/^\+[1-9]\d{6,14}$/'],
-            'customer.email' => ['nullable', 'email', 'max:255'],
+            'customer.email' => [
+                $this->input('checkout_channel') === 'website' ? 'required' : 'nullable',
+                'email', 'max:255',
+            ],
         ];
     }
 }

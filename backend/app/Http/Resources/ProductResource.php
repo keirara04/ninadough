@@ -16,6 +16,7 @@ class ProductResource extends JsonResource
             'short_description' => $this->short_description,
             'description' => $this->description,
             'base_price_sen' => $this->base_price_sen,
+            'min_lead_time_days' => $this->min_lead_time_days,
             'allergen_information' => $this->allergen_information,
             'is_featured' => $this->is_featured,
             'category' => $this->category ? [

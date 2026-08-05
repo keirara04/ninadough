@@ -3,6 +3,7 @@
 namespace App\Actions\Checkout;
 
 use App\DataTransferObjects\CartQuote;
+use App\Exceptions\LeadTimeNotMetException;
 use App\Exceptions\PreorderDateUnavailableException;
 use App\Models\PreorderDate;
 use App\Models\ProductVariant;
@@ -31,12 +32,15 @@ class PriceCartAction
         $lines = [];
         $subtotalSen = 0;
         $totalCapacityUnits = 0;
+        $maxLeadTimeDays = 0;
 
         foreach ($items as $item) {
             $variant = ProductVariant::with(['product', 'optionValues.productOptionGroup'])
                 ->findOrFail($item['product_variant_id']);
 
             abort_if(! $variant->is_active || ! $variant->product->is_active, 422, 'Selected product or variant is no longer available.');
+
+            $maxLeadTimeDays = max($maxLeadTimeDays, $variant->product->min_lead_time_days);
 
             $quantity = $item['quantity'];
             $unitPriceSen = $variant->product->base_price_sen + $variant->price_adjustment_sen;
@@ -60,6 +64,10 @@ class PriceCartAction
 
             $subtotalSen += $lineTotalSen;
             $totalCapacityUnits += $capacityUnitsEach * $quantity;
+        }
+
+        if ($maxLeadTimeDays > 0 && $preorderDate->order_date->lt(today()->addDays($maxLeadTimeDays))) {
+            throw new LeadTimeNotMetException($maxLeadTimeDays);
         }
 
         $deliveryFeeSen = 0;
