@@ -45,8 +45,9 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (fulfilmentMethod === "delivery") {
-      setZonesError(null);
-      getDeliveryZones()
+      Promise.resolve()
+        .then(() => setZonesError(null))
+        .then(() => getDeliveryZones())
         .then((zones) => {
           setDeliveryZones(zones);
           setDeliveryZoneId((current) => current ?? zones[0]?.id ?? null);
@@ -68,14 +69,17 @@ export default function CheckoutPage() {
     }
 
     let cancelled = false;
-    setQuoteError(null);
 
-    postCheckoutQuote({
-      items: items.map((line) => ({ product_variant_id: line.variantId, quantity: line.quantity })),
-      preorder_date: preorderDate,
-      fulfilment_method: fulfilmentMethod,
-      delivery_zone_id: fulfilmentMethod === "delivery" ? deliveryZoneId : null,
-    })
+    Promise.resolve()
+      .then(() => setQuoteError(null))
+      .then(() =>
+        postCheckoutQuote({
+          items: items.map((line) => ({ product_variant_id: line.variantId, quantity: line.quantity })),
+          preorder_date: preorderDate,
+          fulfilment_method: fulfilmentMethod,
+          delivery_zone_id: fulfilmentMethod === "delivery" ? deliveryZoneId : null,
+        }),
+      )
       .then((result) => {
         if (!cancelled) {
           setQuote(result);

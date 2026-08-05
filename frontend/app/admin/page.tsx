@@ -12,8 +12,9 @@ export default function AdminOrdersPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsLoading(true);
-    getAdminOrders(statusFilter || undefined)
+    Promise.resolve()
+      .then(() => setIsLoading(true))
+      .then(() => getAdminOrders(statusFilter || undefined))
       .then(setOrders)
       .finally(() => setIsLoading(false));
   }, [statusFilter]);
