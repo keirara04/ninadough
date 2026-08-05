@@ -39,6 +39,8 @@ class CapacityConcurrencyTest extends TestCase
         DB::table('order_item_option_values')->delete();
         DB::table('order_items')->delete();
         DB::table('order_status_events')->delete();
+        DB::table('payment_proofs')->delete();
+        DB::table('payments')->delete();
         DB::table('orders')->delete();
         DB::table('customers')->delete();
         DB::table('product_variant_option_values')->delete();
