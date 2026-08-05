@@ -5,16 +5,32 @@ namespace App\Actions\Orders;
 use App\Actions\Inventory\DeductStockAction;
 use App\Actions\Inventory\ReleaseStockAction;
 use App\Exceptions\InvalidOrderTransitionException;
+use App\Mail\OrderStatusUpdateMail;
+use App\Models\NotificationLog;
 use App\Models\Order;
 use App\Models\OrderStatusEvent;
 use App\Models\User;
 use App\Services\OrderStatusTransitions;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
 class TransitionOrderStatusAction
 {
+    /**
+     * Customer-facing status copy — only these transitions notify the
+     * customer. rejected/expired/cancelled and internal states like
+     * whatsapp_pending/awaiting_payment stay silent for now.
+     */
+    private const CUSTOMER_STATUS_COPY = [
+        'payment_submitted' => 'Payment under review',
+        'payment_confirmed' => 'Paid',
+        'preparing' => "We're preparing your order",
+        'ready_for_pickup' => 'Ready for pickup',
+        'out_for_delivery' => 'Out for delivery',
+    ];
+
     public function __construct(
         private readonly ReleaseOrderCapacityAction $releaseCapacityAction = new ReleaseOrderCapacityAction,
         private readonly ReleaseStockAction $releaseStockAction = new ReleaseStockAction,
@@ -34,7 +50,7 @@ class TransitionOrderStatusAction
         ?string $rejectionMessage = null,
         ?string $noteInternal = null,
     ): Order {
-        return DB::transaction(function () use ($orderId, $toStatus, $actorType, $actorUser, $rejectionMessage, $noteInternal) {
+        $order = DB::transaction(function () use ($orderId, $toStatus, $actorType, $actorUser, $rejectionMessage, $noteInternal) {
             $order = Order::whereKey($orderId)->lockForUpdate()->firstOrFail();
             $fromStatus = $order->status;
 
@@ -102,5 +118,29 @@ class TransitionOrderStatusAction
 
             return $order;
         });
+
+        $this->notifyCustomerIfApplicable($order);
+
+        return $order;
+    }
+
+    private function notifyCustomerIfApplicable(Order $order): void
+    {
+        $headline = self::CUSTOMER_STATUS_COPY[$order->status] ?? null;
+
+        if (! $headline || ! $order->wasChanged('status') || ! $order->customer_email_snapshot) {
+            return;
+        }
+
+        Mail::to($order->customer_email_snapshot)->queue(new OrderStatusUpdateMail($order, $headline));
+
+        NotificationLog::create([
+            'order_id' => $order->id,
+            'customer_id' => $order->customer_id,
+            'channel' => 'email',
+            'template_key' => 'order_status_update',
+            'recipient' => $order->customer_email_snapshot,
+            'status' => 'queued',
+        ]);
     }
 }

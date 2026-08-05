@@ -8,15 +8,15 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::table('payment_proofs', function (Blueprint $table) {
-            $table->timestampTz('superseded_at')->nullable();
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('phone_e164', 20)->nullable();
         });
     }
 
     public function down(): void
     {
-        Schema::table('payment_proofs', function (Blueprint $table) {
-            $table->dropColumn('superseded_at');
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropColumn('phone_e164');
         });
     }
 };

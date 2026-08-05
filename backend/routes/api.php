@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AdminCategoryController;
+use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminPaymentController;
 use App\Http\Controllers\Api\Admin\AdminPaymentProofController;
 use App\Http\Controllers\Api\Admin\AdminProductController;
+use App\Http\Controllers\Api\Admin\AdminProductImageController;
 use App\Http\Controllers\Api\Admin\AdminTimeSlotController;
 use App\Http\Controllers\Api\CheckoutQuoteController;
 use App\Http\Controllers\Api\DeliveryZoneController;
@@ -71,6 +73,12 @@ Route::prefix('v1')->group(function () {
                 Route::post('/preorder-dates/{preorderDate}/time-slots', [AdminTimeSlotController::class, 'store']);
                 Route::patch('/preorder-dates/{preorderDate}/time-slots/{timeSlot}', [AdminTimeSlotController::class, 'update']);
                 Route::delete('/preorder-dates/{preorderDate}/time-slots/{timeSlot}', [AdminTimeSlotController::class, 'destroy']);
+
+                Route::post('/products/{product}/images', [AdminProductImageController::class, 'store']);
+                Route::delete('/products/{product}/images/{image}', [AdminProductImageController::class, 'destroy']);
+                Route::patch('/products/{product}/images/{image}/primary', [AdminProductImageController::class, 'primary']);
+
+                Route::get('/dashboard', [AdminDashboardController::class, 'index']);
             });
         });
     });

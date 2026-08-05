@@ -7,6 +7,7 @@ use App\Models\Payment;
 use App\Models\PaymentProof;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\URL;
 use Tests\TestCase;
@@ -14,6 +15,15 @@ use Tests\TestCase;
 class PaymentProofUploadTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Payment-proof upload dispatches NotifyAdminPaymentSubmitted (WhatsApp);
+        // fake the queue so tests never make a real network call.
+        Queue::fake();
+    }
 
     private function signedUploadUrl(Order $order): string
     {

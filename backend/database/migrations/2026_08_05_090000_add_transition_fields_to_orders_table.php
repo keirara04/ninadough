@@ -9,9 +9,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('orders', function (Blueprint $table) {
-            $table->string('rejection_message', 500)->nullable()->after('payment_method');
-            $table->boolean('refund_required')->default(false)->after('rejection_message');
-            $table->text('refund_note')->nullable()->after('refund_required');
+            $table->string('rejection_message', 500)->nullable();
+            $table->boolean('refund_required')->default(false);
+            $table->text('refund_note')->nullable();
         });
     }
 

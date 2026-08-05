@@ -6,6 +6,7 @@ use App\Actions\Orders\TransitionOrderStatusAction;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Orders\UploadPaymentProofRequest;
 use App\Http\Resources\OrderStatusResource;
+use App\Jobs\NotifyAdminPaymentSubmitted;
 use App\Models\Order;
 use App\Models\PaymentProof;
 use Illuminate\Support\Facades\DB;
@@ -47,6 +48,8 @@ class PaymentProofController extends Controller
             toStatus: 'payment_submitted',
             actorType: 'system',
         );
+
+        NotifyAdminPaymentSubmitted::dispatch($order->id);
 
         return new OrderStatusResource($order);
     }

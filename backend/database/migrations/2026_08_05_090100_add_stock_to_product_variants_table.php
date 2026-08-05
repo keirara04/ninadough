@@ -10,8 +10,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('product_variants', function (Blueprint $table) {
-            $table->integer('stock_quantity')->default(0)->after('capacity_units');
-            $table->integer('reserved_quantity')->default(0)->after('stock_quantity');
+            $table->integer('stock_quantity')->default(0);
+            $table->integer('reserved_quantity')->default(0);
         });
 
         DB::statement(

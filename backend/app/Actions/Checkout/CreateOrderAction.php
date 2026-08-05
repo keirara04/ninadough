@@ -3,8 +3,10 @@
 namespace App\Actions\Checkout;
 
 use App\Actions\Inventory\ReserveStockAction;
+use App\Mail\OrderConfirmationMail;
 use App\Models\BusinessSetting;
 use App\Models\Customer;
+use App\Models\NotificationLog;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\OrderItemOptionValue;
@@ -12,6 +14,7 @@ use App\Models\OrderStatusEvent;
 use App\Models\Payment;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class CreateOrderAction
@@ -50,7 +53,7 @@ class CreateOrderAction
 
         for ($attempt = 0; $attempt < 3; $attempt++) {
             try {
-                return DB::transaction(function () use ($payload, $quote) {
+                $order = DB::transaction(function () use ($payload, $quote) {
                     $this->reserveCapacityAction->execute(
                         $quote->preorderDateId,
                         $quote->totalCapacityUnits,
@@ -150,6 +153,21 @@ class CreateOrderAction
 
                     return $order;
                 });
+
+                if ($order->customer_email_snapshot) {
+                    Mail::to($order->customer_email_snapshot)->queue(new OrderConfirmationMail($order));
+
+                    NotificationLog::create([
+                        'order_id' => $order->id,
+                        'customer_id' => $order->customer_id,
+                        'channel' => 'email',
+                        'template_key' => 'order_confirmation',
+                        'recipient' => $order->customer_email_snapshot,
+                        'status' => 'queued',
+                    ]);
+                }
+
+                return $order;
             } catch (QueryException $e) {
                 if (! $this->isUniqueViolation($e)) {
                     throw $e;
