@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { Fraunces, Geist, Geist_Mono } from "next/font/google";
+import { ConfirmProvider } from "@/components/ui/ConfirmDialog";
+import { ToastProvider } from "@/components/ui/ToastProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -34,7 +36,9 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-brand-cream text-brand-cocoa">
-        {children}
+        <ToastProvider>
+          <ConfirmProvider>{children}</ConfirmProvider>
+        </ToastProvider>
       </body>
     </html>
   );

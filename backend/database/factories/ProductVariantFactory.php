@@ -17,6 +17,8 @@ class ProductVariantFactory extends Factory
             'name' => $this->faker->words(2, true),
             'price_adjustment_sen' => 0,
             'capacity_units' => 1,
+            'stock_quantity' => 100,
+            'reserved_quantity' => 0,
             'is_active' => true,
             'sort_order' => 0,
         ];

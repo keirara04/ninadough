@@ -3,8 +3,11 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { getItemCount, useCartStore } from "@/lib/cart-store";
+
+const FOCUS_RING =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2";
 
 const NAV_LINKS = [
   { label: "Shop", href: "#catalogue" },
@@ -20,6 +23,7 @@ export function StorefrontHeader() {
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [searchValue, setSearchValue] = useState("");
+  const drawerCloseRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     function onScroll() {
@@ -28,6 +32,20 @@ export function StorefrontHeader() {
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    if (!isDrawerOpen) return;
+
+    drawerCloseRef.current?.focus();
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setIsDrawerOpen(false);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isDrawerOpen]);
 
   function submitSearch(event: React.FormEvent) {
     event.preventDefault();
@@ -54,7 +72,7 @@ export function StorefrontHeader() {
           type="button"
           aria-label="Open menu"
           onClick={() => setIsDrawerOpen(true)}
-          className="flex h-11 w-11 items-center justify-center rounded-full text-brand-cocoa lg:hidden"
+          className={`flex h-11 w-11 items-center justify-center rounded-full text-brand-cocoa transition-transform active:scale-90 lg:hidden ${FOCUS_RING}`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6">
             <path strokeLinecap="round" d="M4 7h16M4 12h16M4 17h16" />
@@ -77,7 +95,7 @@ export function StorefrontHeader() {
             <a
               key={link.href}
               href={link.href}
-              className="text-sm font-medium text-brand-cocoa/80 hover:text-brand-cocoa"
+              className={`rounded text-sm font-medium text-brand-cocoa/80 hover:text-brand-cocoa ${FOCUS_RING}`}
             >
               {link.label}
             </a>
@@ -98,7 +116,7 @@ export function StorefrontHeader() {
           type="button"
           aria-label="Search"
           onClick={() => setIsDrawerOpen(true)}
-          className="flex h-11 w-11 items-center justify-center rounded-full text-brand-cocoa lg:hidden"
+          className={`flex h-11 w-11 items-center justify-center rounded-full text-brand-cocoa transition-transform active:scale-90 lg:hidden ${FOCUS_RING}`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-5 w-5">
             <circle cx="11" cy="11" r="7" />
@@ -110,7 +128,7 @@ export function StorefrontHeader() {
           type="button"
           aria-label="View cart"
           onClick={openCart}
-          className="relative flex h-11 w-11 items-center justify-center rounded-full text-brand-pink"
+          className={`relative flex h-11 w-11 items-center justify-center rounded-full text-brand-pink transition-transform active:scale-90 ${FOCUS_RING}`}
         >
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-6 w-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 7V6a3 3 0 1 1 6 0v1m-8 0h10l1 12a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
@@ -135,10 +153,11 @@ export function StorefrontHeader() {
             <div className="mb-4 flex items-center justify-between">
               <span className="font-display text-lg font-semibold text-brand-cocoa">Menu</span>
               <button
+                ref={drawerCloseRef}
                 type="button"
                 aria-label="Close menu"
                 onClick={() => setIsDrawerOpen(false)}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-brand-cocoa/60"
+                className={`flex h-9 w-9 items-center justify-center rounded-full text-brand-cocoa/60 ${FOCUS_RING}`}
               >
                 &times;
               </button>
@@ -159,7 +178,7 @@ export function StorefrontHeader() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsDrawerOpen(false)}
-                className="min-h-11 rounded-xl px-3 py-2.5 text-sm font-medium text-brand-cocoa hover:bg-brand-cream"
+                className={`min-h-11 rounded-xl px-3 py-2.5 text-sm font-medium text-brand-cocoa hover:bg-brand-cream ${FOCUS_RING}`}
               >
                 {link.label}
               </a>

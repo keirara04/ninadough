@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { ApiError, getDeliveryZones, postCheckoutQuote, postOrder } from "@/lib/api";
 import { getSubtotalSen, useCartStore } from "@/lib/cart-store";
 import { formatSen } from "@/lib/format";
@@ -16,6 +17,7 @@ export default function CheckoutPage() {
   const clearCart = useCartStore((state) => state.clear);
 
   const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
+  const [zonesError, setZonesError] = useState<string | null>(null);
   const [deliveryZoneId, setDeliveryZoneId] = useState<number | null>(null);
   const [quote, setQuote] = useState<CartQuote | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
@@ -43,12 +45,16 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     if (fulfilmentMethod === "delivery") {
+      setZonesError(null);
       getDeliveryZones()
         .then((zones) => {
           setDeliveryZones(zones);
           setDeliveryZoneId((current) => current ?? zones[0]?.id ?? null);
         })
-        .catch(() => setDeliveryZones([]));
+        .catch(() => {
+          setDeliveryZones([]);
+          setZonesError("Couldn't load delivery zones — try refreshing the page.");
+        });
     }
   }, [fulfilmentMethod]);
 
@@ -191,6 +197,7 @@ export default function CheckoutPage() {
         {fulfilmentMethod === "delivery" && (
           <section className="rounded-2xl bg-white p-4 shadow-sm">
             <h2 className="mb-3 font-semibold text-brand-cocoa">Delivery address</h2>
+            {zonesError && <p className="mb-3 text-sm text-red-600">{zonesError}</p>}
             <div className="flex flex-col gap-3">
               <Field label="Delivery zone" error={fieldError("delivery_zone_id")}>
                 <select
@@ -305,13 +312,9 @@ export default function CheckoutPage() {
 
         {submitError && <p className="text-sm text-red-600">{submitError}</p>}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="min-h-11 rounded-full bg-brand-pink text-sm font-semibold text-white disabled:opacity-60"
-        >
+        <Button type="submit" isLoading={isSubmitting} className="w-full">
           {isSubmitting ? "Placing order..." : "Place order"}
-        </button>
+        </Button>
       </form>
     </div>
   );

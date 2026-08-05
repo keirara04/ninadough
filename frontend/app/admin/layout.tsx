@@ -4,6 +4,9 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { adminLogout } from "@/lib/admin-api";
+
+const FOCUS_RING =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2 rounded";
 import { useAdminStore } from "@/lib/admin-store";
 
 const NAV_LINKS = [
@@ -53,7 +56,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   clearSession();
                   router.push("/admin/login");
                 }}
-                className="shrink-0 text-sm font-medium text-brand-pink"
+                className={`shrink-0 text-sm font-medium text-brand-pink ${FOCUS_RING}`}
               >
                 Log out
               </button>
@@ -65,7 +68,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <Link
                 key={link.href}
                 href={link.href}
-                className={`shrink-0 text-sm font-medium ${
+                className={`shrink-0 text-sm font-medium ${FOCUS_RING} ${
                   pathname === link.href ? "text-brand-pink" : "text-brand-cocoa/70 hover:text-brand-cocoa"
                 }`}
               >
@@ -83,7 +86,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 clearSession();
                 router.push("/admin/login");
               }}
-              className="text-sm font-medium text-brand-pink"
+              className={`text-sm font-medium text-brand-pink ${FOCUS_RING}`}
             >
               Log out
             </button>

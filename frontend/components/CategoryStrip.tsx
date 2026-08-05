@@ -35,7 +35,7 @@ function Pill({ label, active, onClick }: { label: string; active: boolean; onCl
     <button
       type="button"
       onClick={onClick}
-      className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition ${
+      className={`min-h-9 shrink-0 whitespace-nowrap rounded-full border px-4 text-sm font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2 ${
         active
           ? "border-brand-cocoa bg-brand-cocoa text-white"
           : "border-brand-cocoa/20 text-brand-cocoa/70"

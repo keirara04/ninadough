@@ -26,4 +26,14 @@ class User extends Authenticatable
             'is_active' => 'boolean',
         ];
     }
+
+    public function isOwner(): bool
+    {
+        return $this->role === 'owner';
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->role === 'staff';
+    }
 }

@@ -38,7 +38,7 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
         id="cart-sheet"
         type="button"
         onClick={() => setIsCollapsed(false)}
-        className="sticky bottom-4 z-10 mx-auto flex min-h-11 w-[calc(100%-2rem)] max-w-md items-center justify-between rounded-full bg-brand-cocoa px-5 text-sm font-semibold text-white shadow-lg lg:max-w-lg"
+        className="animate-slide-up sticky bottom-4 z-10 mx-auto flex min-h-11 w-[calc(100%-2rem)] max-w-md items-center justify-between rounded-full bg-brand-cocoa px-5 text-sm font-semibold text-white shadow-lg transition-transform active:scale-[0.98] lg:max-w-lg"
       >
         <span>Your order ({itemCount})</span>
         <span>{formatSen(subtotalSen)}</span>
@@ -50,7 +50,7 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
     <>
       <div
         id="cart-sheet"
-        className="sticky bottom-0 z-10 rounded-t-2xl border-t border-brand-cocoa/10 bg-white px-4 pb-4 pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] sm:px-6 lg:px-8"
+        className="animate-slide-up sticky bottom-0 z-10 rounded-t-2xl border-t border-brand-cocoa/10 bg-white px-4 pb-4 pt-3 shadow-[0_-4px_16px_rgba(0,0,0,0.08)] sm:px-6 lg:px-8"
       >
         <div className="mx-auto w-full max-w-md lg:max-w-lg">
         <div className="mb-2 flex w-full items-center justify-between">
@@ -68,7 +68,7 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
             type="button"
             aria-label="Minimize cart"
             onClick={() => setIsCollapsed(true)}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-brand-cocoa/50"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-brand-cocoa/50 transition-transform active:scale-90"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="h-4 w-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
@@ -92,7 +92,7 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
                       type="button"
                       aria-label="Decrease quantity"
                       onClick={() => updateQuantity(line.variantId, line.quantity - 1)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-brand-cocoa/20 text-brand-cocoa"
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-brand-cocoa/20 text-brand-cocoa transition-transform active:scale-90"
                     >
                       &minus;
                     </button>
@@ -101,7 +101,7 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
                       type="button"
                       aria-label="Increase quantity"
                       onClick={() => updateQuantity(line.variantId, line.quantity + 1)}
-                      className="flex h-7 w-7 items-center justify-center rounded-full border border-brand-cocoa/20 text-brand-cocoa"
+                      className="flex h-7 w-7 items-center justify-center rounded-full border border-brand-cocoa/20 text-brand-cocoa transition-transform active:scale-90"
                     >
                       +
                     </button>
@@ -131,7 +131,7 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
         <button
           type="button"
           onClick={() => setIsDatePickerOpen(true)}
-          className="mb-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-pink text-sm font-semibold text-white"
+          className="mb-2 flex min-h-11 w-full items-center justify-center gap-2 rounded-full bg-brand-pink text-sm font-semibold text-white transition-transform active:scale-[0.98]"
         >
           {selectedDate
             ? `Order for ${new Date(`${selectedDate.order_date}T00:00:00`).toLocaleDateString("en-MY", { day: "numeric", month: "short" })}`
@@ -144,7 +144,7 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
               key={method}
               type="button"
               onClick={() => setFulfilmentMethod(method)}
-              className={`min-h-11 rounded-full border text-sm font-medium capitalize ${
+              className={`min-h-11 rounded-full border text-sm font-medium capitalize transition active:scale-[0.98] ${
                 fulfilmentMethod === method
                   ? "border-brand-gold bg-brand-gold/20 text-brand-cocoa"
                   : "border-brand-cocoa/15 text-brand-cocoa/70"
@@ -159,7 +159,7 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
           type="button"
           disabled={!selectedDate}
           onClick={() => router.push("/checkout")}
-          className="mb-2 min-h-11 w-full rounded-full bg-brand-cocoa text-sm font-semibold text-white disabled:opacity-40"
+          className="mb-2 min-h-11 w-full rounded-full bg-brand-cocoa text-sm font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-40"
         >
           Checkout
         </button>

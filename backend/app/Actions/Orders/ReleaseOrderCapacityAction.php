@@ -25,19 +25,7 @@ class ReleaseOrderCapacityAction
             $order = Order::whereKey($orderId)->lockForUpdate()->firstOrFail();
             $fromStatus = $order->status;
 
-            if ($order->capacity_released_at === null) {
-                $date = PreorderDate::whereKey($order->preorder_date_id)->lockForUpdate()->first();
-
-                if ($date) {
-                    $date->reserved_capacity = max(0, $date->reserved_capacity - $order->total_capacity_units);
-                    if ($date->status === 'full' && $date->reserved_capacity < $date->capacity_limit) {
-                        $date->status = 'open';
-                    }
-                    $date->save();
-                }
-
-                $order->capacity_released_at = now();
-            }
+            $this->releaseCapacityOnly($order);
 
             $order->status = $toStatus;
             $order->save();
@@ -53,5 +41,30 @@ class ReleaseOrderCapacityAction
 
             return $order;
         });
+    }
+
+    /**
+     * Releases reserved preorder-date capacity for $order, guarded by
+     * capacity_released_at so it only ever fires once. Does not save
+     * $order or touch its status — caller is responsible for both.
+     * $order must already be locked by the caller.
+     */
+    public function releaseCapacityOnly(Order $order): void
+    {
+        if ($order->capacity_released_at !== null) {
+            return;
+        }
+
+        $date = PreorderDate::whereKey($order->preorder_date_id)->lockForUpdate()->first();
+
+        if ($date) {
+            $date->reserved_capacity = max(0, $date->reserved_capacity - $order->total_capacity_units);
+            if ($date->status === 'full' && $date->reserved_capacity < $date->capacity_limit) {
+                $date->status = 'open';
+            }
+            $date->save();
+        }
+
+        $order->capacity_released_at = now();
     }
 }

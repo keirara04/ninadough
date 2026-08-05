@@ -17,7 +17,7 @@ class CheckoutQuoteController extends Controller
             items: $data['items'],
             orderDate: $data['preorder_date'],
             fulfilmentMethod: $data['fulfilment_method'],
-            deliveryZoneId: $data['delivery_zone_id'] ?? null,
+            deliveryPostcode: $data['postcode'] ?? null,
         );
 
         return new CartQuoteResource($quote);

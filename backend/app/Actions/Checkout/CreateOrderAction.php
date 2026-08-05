@@ -2,6 +2,7 @@
 
 namespace App\Actions\Checkout;
 
+use App\Actions\Inventory\ReserveStockAction;
 use App\Models\BusinessSetting;
 use App\Models\Customer;
 use App\Models\Order;
@@ -18,6 +19,7 @@ class CreateOrderAction
     public function __construct(
         private readonly PriceCartAction $priceCartAction = new PriceCartAction,
         private readonly ReservePreorderCapacityAction $reserveCapacityAction = new ReservePreorderCapacityAction,
+        private readonly ReserveStockAction $reserveStockAction = new ReserveStockAction,
     ) {}
 
     /**
@@ -26,7 +28,6 @@ class CreateOrderAction
      *     preorder_date: string,
      *     checkout_channel: string,
      *     fulfilment_method: string,
-     *     delivery_zone_id?: int|null,
      *     delivery_address?: array|null,
      *     idempotency_key: string,
      *     customer: array{name: string, phone_e164: string, email?: string|null},
@@ -43,7 +44,7 @@ class CreateOrderAction
             items: $payload['items'],
             orderDate: $payload['preorder_date'],
             fulfilmentMethod: $payload['fulfilment_method'],
-            deliveryZoneId: $payload['delivery_zone_id'] ?? null,
+            deliveryPostcode: $payload['delivery_address']['postcode'] ?? null,
         );
 
         for ($attempt = 0; $attempt < 3; $attempt++) {
@@ -54,6 +55,8 @@ class CreateOrderAction
                         $quote->totalCapacityUnits,
                         $payload['fulfilment_method'],
                     );
+
+                    $this->reserveStockAction->execute($payload['items']);
 
                     $customer = Customer::firstOrCreate(
                         ['phone_e164' => $payload['customer']['phone_e164']],
@@ -70,7 +73,7 @@ class CreateOrderAction
                         'preorder_date_id' => $quote->preorderDateId,
                         'checkout_channel' => $payload['checkout_channel'],
                         'fulfilment_method' => $payload['fulfilment_method'],
-                        'delivery_zone_id' => $payload['delivery_zone_id'] ?? null,
+                        'delivery_zone_id' => $quote->deliveryZoneId,
                         'customer_name_snapshot' => $payload['customer']['name'],
                         'customer_phone_snapshot' => $payload['customer']['phone_e164'],
                         'customer_email_snapshot' => $payload['customer']['email'] ?? null,

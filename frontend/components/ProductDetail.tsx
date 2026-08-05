@@ -3,14 +3,16 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/ToastProvider";
 import { useCartStore } from "@/lib/cart-store";
 import { formatSen } from "@/lib/format";
 import type { Product } from "@/lib/types";
 
 export function ProductDetail({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
+  const toast = useToast();
   const [selectedVariantId, setSelectedVariantId] = useState(product.variants[0]?.id ?? null);
-  const [added, setAdded] = useState(false);
 
   const selectedVariant =
     product.variants.find((variant) => variant.id === selectedVariantId) ?? product.variants[0];
@@ -83,7 +85,7 @@ export function ProductDetail({ product }: { product: Product }) {
                     key={variant.id}
                     type="button"
                     onClick={() => setSelectedVariantId(variant.id)}
-                    className={`min-h-9 rounded-full border px-3 text-sm font-medium transition ${
+                    className={`min-h-9 rounded-full border px-3 text-sm font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2 ${
                       variant.id === selectedVariant.id
                         ? "border-brand-pink bg-brand-pink text-white"
                         : "border-brand-cocoa/20 text-brand-cocoa/80"
@@ -96,8 +98,8 @@ export function ProductDetail({ product }: { product: Product }) {
             </div>
           )}
 
-          <button
-            type="button"
+          <Button
+            className="self-start"
             onClick={() => {
               addItem({
                 productId: product.id,
@@ -107,15 +109,11 @@ export function ProductDetail({ product }: { product: Product }) {
                 unitPriceSen: selectedVariant.price_sen,
                 capacityUnitsEach: selectedVariant.capacity_units,
               });
-              setAdded(true);
-              setTimeout(() => setAdded(false), 1500);
+              toast.show("Added to cart");
             }}
-            className={`min-h-11 rounded-full px-6 text-sm font-semibold text-white transition-all active:scale-95 ${
-              added ? "bg-green-600" : "bg-brand-pink"
-            }`}
           >
-            {added ? "Added!" : "Add to cart"}
-          </button>
+            Add to cart
+          </Button>
 
           {product.description && (
             <div>

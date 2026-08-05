@@ -3,17 +3,19 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/ToastProvider";
 import { useCartStore } from "@/lib/cart-store";
 import { formatSen } from "@/lib/format";
 import type { Product } from "@/lib/types";
 
 export function ProductCard({ product }: { product: Product }) {
   const addItem = useCartStore((state) => state.addItem);
+  const toast = useToast();
   const [selectedVariantId, setSelectedVariantId] = useState(
     product.variants[0]?.id ?? null,
   );
   const [isFavourited, setIsFavourited] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
 
   const selectedVariant =
     product.variants.find((variant) => variant.id === selectedVariantId) ??
@@ -53,7 +55,7 @@ export function ProductCard({ product }: { product: Product }) {
           aria-label={isFavourited ? "Remove from favourites" : "Add to favourites"}
           aria-pressed={isFavourited}
           onClick={() => setIsFavourited((prev) => !prev)}
-          className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 transition-transform active:scale-90"
+          className="absolute right-2 top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 transition-transform active:scale-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2"
         >
           <svg
             viewBox="0 0 24 24"
@@ -87,7 +89,7 @@ export function ProductCard({ product }: { product: Product }) {
                   key={variant.id}
                   type="button"
                   onClick={() => setSelectedVariantId(variant.id)}
-                  className={`rounded-full border px-2.5 py-1 text-xs font-medium transition active:scale-95 ${
+                  className={`rounded-full border px-2.5 py-1 text-xs font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2 ${
                     variant.id === selectedVariant.id
                       ? "border-brand-pink bg-brand-pink text-white"
                       : "border-brand-cocoa/20 text-brand-cocoa/80"
@@ -104,8 +106,8 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="text-base font-bold text-brand-cocoa">
             {formatSen(selectedVariant.price_sen)}
           </span>
-          <button
-            type="button"
+          <Button
+            size="sm"
             onClick={() => {
               addItem({
                 productId: product.id,
@@ -115,15 +117,11 @@ export function ProductCard({ product }: { product: Product }) {
                 unitPriceSen: selectedVariant.price_sen,
                 capacityUnitsEach: selectedVariant.capacity_units,
               });
-              setJustAdded(true);
-              setTimeout(() => setJustAdded(false), 1200);
+              toast.show("Added to cart");
             }}
-            className={`min-h-11 rounded-full px-5 text-sm font-semibold text-white transition-all active:scale-95 ${
-              justAdded ? "bg-green-600" : "bg-brand-pink"
-            }`}
           >
-            {justAdded ? "Added!" : "Add"}
-          </button>
+            Add
+          </Button>
         </div>
       </div>
     </div>

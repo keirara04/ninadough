@@ -27,6 +27,7 @@ readonly class CartQuote
         public string $orderDate,
         public int $remainingCapacity,
         public string $cutoffAt,
+        public ?int $deliveryZoneId = null,
     ) {}
 
     public function toArray(): array
@@ -42,6 +43,7 @@ readonly class CartQuote
                 'remaining_capacity' => $this->remainingCapacity,
                 'cutoff_at' => $this->cutoffAt,
             ],
+            'delivery_zone_id' => $this->deliveryZoneId,
         ];
     }
 }

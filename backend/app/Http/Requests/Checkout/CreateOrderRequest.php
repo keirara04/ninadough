@@ -21,7 +21,6 @@ class CreateOrderRequest extends FormRequest
             'preorder_date' => ['required', 'date_format:Y-m-d', new PreorderDateExists],
             'checkout_channel' => ['required', 'string', 'in:website,whatsapp'],
             'fulfilment_method' => ['required', 'string', 'in:pickup,delivery'],
-            'delivery_zone_id' => ['required_if:fulfilment_method,delivery', 'nullable', 'integer', 'exists:delivery_zones,id'],
             'delivery_address' => ['required_if:fulfilment_method,delivery', 'nullable', 'array'],
             'delivery_address.recipient_name' => ['required_if:fulfilment_method,delivery', 'string', 'max:160'],
             'delivery_address.recipient_phone_e164' => ['required_if:fulfilment_method,delivery', 'string', 'max:20'],

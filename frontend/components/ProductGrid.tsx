@@ -27,7 +27,10 @@ export function ProductGrid({
         {filtered.length === 0 ? (
           <p className="py-8 text-center text-sm text-brand-cocoa/60">{emptyMessage}</p>
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5">
+          <div
+            key={activeCategoryId ?? "all"}
+            className="animate-fade-in grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 xl:grid-cols-5"
+          >
             {filtered.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

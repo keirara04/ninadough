@@ -4,8 +4,9 @@ import { useAdminStore } from "./admin-store";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
-interface ApiCollection<T> {
+interface PaginatedCollection<T> {
   data: T[];
+  meta: { current_page: number; last_page: number };
 }
 
 interface ApiResource<T> {
@@ -44,6 +45,24 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return handle<T>(response);
 }
 
+async function adminFetchAllPages<T>(path: string): Promise<T[]> {
+  const separator = path.includes("?") ? "&" : "?";
+  const items: T[] = [];
+  let page = 1;
+
+  while (true) {
+    const result = await adminFetch<PaginatedCollection<T>>(`${path}${separator}page=${page}`);
+    items.push(...result.data);
+
+    if (page >= result.meta.last_page) {
+      break;
+    }
+    page += 1;
+  }
+
+  return items;
+}
+
 export async function adminLogin(email: string, password: string) {
   const response = await fetch(`${API_URL}/admin/login`, {
     method: "POST",
@@ -63,8 +82,7 @@ export async function adminLogout() {
 
 export async function getAdminOrders(status?: string): Promise<AdminOrder[]> {
   const suffix = status ? `?status=${encodeURIComponent(status)}` : "";
-  const { data } = await adminFetch<ApiCollection<AdminOrder>>(`/orders${suffix}`);
-  return data;
+  return adminFetchAllPages<AdminOrder>(`/orders${suffix}`);
 }
 
 export async function getAdminOrder(id: number): Promise<AdminOrder> {
@@ -93,8 +111,7 @@ export async function reviewAdminPayment(
 }
 
 export async function getAdminCategories(): Promise<AdminCategory[]> {
-  const { data } = await adminFetch<ApiCollection<AdminCategory>>("/categories");
-  return data;
+  return adminFetchAllPages<AdminCategory>("/categories");
 }
 
 export async function createAdminCategory(input: { name: string; slug: string }): Promise<AdminCategory> {
@@ -121,8 +138,7 @@ export async function deleteAdminCategory(id: number): Promise<void> {
 }
 
 export async function getAdminProducts(): Promise<AdminProduct[]> {
-  const { data } = await adminFetch<ApiCollection<AdminProduct>>("/products");
-  return data;
+  return adminFetchAllPages<AdminProduct>("/products");
 }
 
 export interface AdminProductInput {

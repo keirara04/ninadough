@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Actions\Orders\TransitionOrderStatusAction;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminOrderResource;
 use App\Models\Payment;
@@ -10,23 +11,27 @@ use Illuminate\Support\Facades\Validator;
 
 class AdminPaymentController extends Controller
 {
-    public function review(Request $request, Payment $payment)
+    public function review(Request $request, Payment $payment, TransitionOrderStatusAction $transitionAction)
     {
         $validated = Validator::make($request->all(), [
             'action' => ['required', 'string', 'in:approve,reject'],
             'note' => ['nullable', 'string', 'max:500'],
+            'rejection_message' => ['required_if:action,reject', 'nullable', 'string', 'max:500'],
         ])->validate();
 
-        $order = $payment->order;
         $isApprove = $validated['action'] === 'approve';
+        $order = $payment->order;
+
+        $order = $transitionAction->execute(
+            orderId: $order->id,
+            toStatus: $isApprove ? 'payment_confirmed' : 'rejected',
+            actorType: 'user',
+            actorUser: $request->user(),
+            rejectionMessage: $isApprove ? null : $validated['rejection_message'],
+            noteInternal: $validated['note'] ?? null,
+        );
 
         $payment->update(['status' => $isApprove ? 'confirmed' : 'failed']);
-
-        $order->update([
-            'status' => $isApprove ? 'payment_confirmed' : 'awaiting_payment',
-            'payment_status' => $isApprove ? 'paid' : 'awaiting_payment',
-            'paid_at' => $isApprove ? now() : null,
-        ]);
 
         $payment->proofs()->latest('uploaded_at')->first()?->update([
             'reviewed_at' => now(),

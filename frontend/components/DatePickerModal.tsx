@@ -1,6 +1,10 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import type { PreorderDate } from "@/lib/types";
+
+const FOCUS_RING =
+  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2";
 
 function formatDate(dateString: string): string {
   return new Date(`${dateString}T00:00:00`).toLocaleDateString("en-MY", {
@@ -28,6 +32,20 @@ export function DatePickerModal({
   onSelect: (date: PreorderDate) => void;
   onClose: () => void;
 }) {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    closeButtonRef.current?.focus();
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [onClose]);
+
   return (
     <div className="animate-fade-in fixed inset-0 z-30 flex items-end bg-black/40 sm:items-center sm:justify-center">
       <div className="animate-slide-up max-h-[80vh] w-full overflow-y-auto rounded-t-2xl bg-white p-4 sm:max-w-sm sm:rounded-2xl">
@@ -37,10 +55,11 @@ export function DatePickerModal({
             Choose order date
           </h2>
           <button
+            ref={closeButtonRef}
             type="button"
             aria-label="Close"
             onClick={onClose}
-            className="flex h-9 w-9 items-center justify-center rounded-full text-brand-cocoa/60"
+            className={`flex h-9 w-9 items-center justify-center rounded-full text-brand-cocoa/60 ${FOCUS_RING}`}
           >
             &times;
           </button>
@@ -62,7 +81,7 @@ export function DatePickerModal({
                   type="button"
                   disabled={!isOrderable}
                   onClick={() => onSelect(date)}
-                  className={`flex w-full min-h-11 items-center justify-between rounded-xl border px-3 py-2 text-left transition active:scale-[0.98] ${
+                  className={`flex w-full min-h-11 items-center justify-between rounded-xl border px-3 py-2 text-left transition active:scale-[0.98] ${FOCUS_RING} ${
                     isOrderable
                       ? "border-brand-cocoa/15 text-brand-cocoa hover:border-brand-pink/40 hover:bg-brand-cream/50"
                       : "border-brand-cocoa/10 text-brand-cocoa/40"

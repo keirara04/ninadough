@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\Admin\AdminAuthController;
 use App\Http\Controllers\Api\Admin\AdminCategoryController;
 use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminPaymentController;
+use App\Http\Controllers\Api\Admin\AdminPaymentProofController;
 use App\Http\Controllers\Api\Admin\AdminProductController;
 use App\Http\Controllers\Api\CheckoutQuoteController;
 use App\Http\Controllers\Api\DeliveryZoneController;
@@ -42,20 +43,26 @@ Route::prefix('v1')->group(function () {
         Route::middleware('auth:sanctum')->group(function () {
             Route::post('/logout', [AdminAuthController::class, 'logout']);
 
+            // Shared: both owner and staff — staff's job is payment review only.
             Route::get('/orders', [AdminOrderController::class, 'index']);
             Route::get('/orders/{order}', [AdminOrderController::class, 'show']);
-            Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
             Route::patch('/payments/{payment}/review', [AdminPaymentController::class, 'review']);
+            Route::get('/payment-proofs/{proof}', [AdminPaymentProofController::class, 'show'])->name('admin.payment-proofs.show');
 
-            Route::get('/categories', [AdminCategoryController::class, 'index']);
-            Route::post('/categories', [AdminCategoryController::class, 'store']);
-            Route::patch('/categories/{category}', [AdminCategoryController::class, 'update']);
-            Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy']);
+            // Owner-only: everything else.
+            Route::middleware('admin.role:owner')->group(function () {
+                Route::patch('/orders/{order}/status', [AdminOrderController::class, 'updateStatus']);
 
-            Route::get('/products', [AdminProductController::class, 'index']);
-            Route::post('/products', [AdminProductController::class, 'store']);
-            Route::patch('/products/{product}', [AdminProductController::class, 'update']);
-            Route::delete('/products/{product}', [AdminProductController::class, 'destroy']);
+                Route::get('/categories', [AdminCategoryController::class, 'index']);
+                Route::post('/categories', [AdminCategoryController::class, 'store']);
+                Route::patch('/categories/{category}', [AdminCategoryController::class, 'update']);
+                Route::delete('/categories/{category}', [AdminCategoryController::class, 'destroy']);
+
+                Route::get('/products', [AdminProductController::class, 'index']);
+                Route::post('/products', [AdminProductController::class, 'store']);
+                Route::patch('/products/{product}', [AdminProductController::class, 'update']);
+                Route::delete('/products/{product}', [AdminProductController::class, 'destroy']);
+            });
         });
     });
 });

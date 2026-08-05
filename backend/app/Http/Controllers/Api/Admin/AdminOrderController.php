@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api\Admin;
 
+use App\Actions\Orders\TransitionOrderStatusAction;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\Admin\AdminOrderResource;
 use App\Models\Order;
@@ -37,13 +38,22 @@ class AdminOrderController extends Controller
         return new AdminOrderResource($order);
     }
 
-    public function updateStatus(Request $request, Order $order)
+    public function updateStatus(Request $request, Order $order, TransitionOrderStatusAction $transitionAction)
     {
         $validated = Validator::make($request->all(), [
             'status' => ['required', 'string', 'in:'.implode(',', self::ALLOWED_STATUSES)],
+            'rejection_message' => ['nullable', 'string', 'max:500'],
+            'note' => ['nullable', 'string', 'max:500'],
         ])->validate();
 
-        $order->update(['status' => $validated['status']]);
+        $order = $transitionAction->execute(
+            orderId: $order->id,
+            toStatus: $validated['status'],
+            actorType: 'user',
+            actorUser: $request->user(),
+            rejectionMessage: $validated['rejection_message'] ?? null,
+            noteInternal: $validated['note'] ?? null,
+        );
 
         return new AdminOrderResource($order->fresh(['items', 'payments.proofs']));
     }

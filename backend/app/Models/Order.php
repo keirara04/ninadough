@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
     'delivery_fee_sen', 'discount_sen', 'total_sen', 'total_capacity_units', 'status',
     'payment_status', 'payment_method', 'expires_at', 'capacity_released_at', 'confirmed_at',
     'paid_at', 'completed_at', 'idempotency_key', 'source_metadata',
+    'rejection_message', 'refund_required', 'refund_note',
 ])]
 class Order extends Model
 {
@@ -31,6 +32,7 @@ class Order extends Model
             'confirmed_at' => 'datetime',
             'paid_at' => 'datetime',
             'completed_at' => 'datetime',
+            'refund_required' => 'boolean',
         ];
     }
 

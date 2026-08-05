@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui/Button";
 import { adminLogin } from "@/lib/admin-api";
 import { useAdminStore } from "@/lib/admin-store";
 import { ApiError } from "@/lib/api";
@@ -41,7 +42,7 @@ export default function AdminLoginPage() {
           placeholder="Email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          className="min-h-11 rounded-xl border border-brand-cocoa/15 px-3 text-sm"
+          className="min-h-11 rounded-xl border border-brand-cocoa/15 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2"
         />
         <input
           type="password"
@@ -49,18 +50,14 @@ export default function AdminLoginPage() {
           placeholder="Password"
           value={password}
           onChange={(event) => setPassword(event.target.value)}
-          className="min-h-11 rounded-xl border border-brand-cocoa/15 px-3 text-sm"
+          className="min-h-11 rounded-xl border border-brand-cocoa/15 px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2"
         />
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="min-h-11 rounded-full bg-brand-pink text-sm font-semibold text-white disabled:opacity-40"
-        >
+        <Button type="submit" isLoading={isSubmitting}>
           {isSubmitting ? "Signing in..." : "Sign in"}
-        </button>
+        </Button>
       </form>
     </div>
   );

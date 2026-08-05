@@ -4,6 +4,7 @@ namespace Tests\Feature\Checkout;
 
 use App\Actions\Checkout\PriceCartAction;
 use App\Models\DeliveryZone;
+use App\Models\DeliveryZonePostcode;
 use App\Models\PreorderDate;
 use App\Models\Product;
 use App\Models\ProductOptionGroup;
@@ -91,12 +92,13 @@ class PriceCartActionTest extends TestCase
         $variant = ProductVariant::factory()->for($product)->create(['price_adjustment_sen' => 0]);
         $preorderDate = PreorderDate::factory()->create();
         $zone = DeliveryZone::factory()->create(['delivery_fee_sen' => 900]);
+        DeliveryZonePostcode::factory()->for($zone, 'deliveryZone')->create(['postcode' => '43000']);
 
         $quote = (new PriceCartAction)->execute(
             items: [['product_variant_id' => $variant->id, 'quantity' => 1]],
             orderDate: $preorderDate->order_date->toDateString(),
             fulfilmentMethod: 'delivery',
-            deliveryZoneId: $zone->id,
+            deliveryPostcode: '43000',
         );
 
         $this->assertSame(900, $quote->deliveryFeeSen);

@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/ToastProvider";
+import { ApiError } from "@/lib/api";
 import {
   createAdminProduct,
   deleteAdminProduct,
@@ -12,12 +16,16 @@ import { formatSen } from "@/lib/format";
 import type { AdminCategory, AdminProduct } from "@/lib/admin-types";
 
 export default function AdminProductsPage() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [name, setName] = useState("");
   const [priceRinggit, setPriceRinggit] = useState("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [busyProductId, setBusyProductId] = useState<string | null>(null);
 
   function reload() {
     return Promise.all([getAdminProducts(), getAdminCategories()]).then(([productsList, categoriesList]) => {
@@ -33,6 +41,7 @@ export default function AdminProductsPage() {
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    setIsCreating(true);
     try {
       await createAdminProduct({
         name,
@@ -44,24 +53,49 @@ export default function AdminProductsPage() {
       setPriceRinggit("");
       setCategoryId("");
       await reload();
+      toast.show("Product added");
     } catch {
       setError("Could not create product.");
+    } finally {
+      setIsCreating(false);
     }
   }
 
   async function toggleActive(product: AdminProduct) {
-    await updateAdminProduct(product.id, { is_active: !product.is_active });
-    await reload();
+    setBusyProductId(product.id);
+    try {
+      await updateAdminProduct(product.id, { is_active: !product.is_active });
+      await reload();
+    } catch (toggleError) {
+      toast.show(toggleError instanceof ApiError ? toggleError.message : "Could not update product.", "error");
+    } finally {
+      setBusyProductId(null);
+    }
   }
 
   async function toggleFeatured(product: AdminProduct) {
-    await updateAdminProduct(product.id, { is_featured: !product.is_featured });
-    await reload();
+    setBusyProductId(product.id);
+    try {
+      await updateAdminProduct(product.id, { is_featured: !product.is_featured });
+      await reload();
+    } catch (toggleError) {
+      toast.show(toggleError instanceof ApiError ? toggleError.message : "Could not update product.", "error");
+    } finally {
+      setBusyProductId(null);
+    }
   }
 
-  async function handleDelete(id: string) {
-    await deleteAdminProduct(id);
-    await reload();
+  async function handleDelete(product: AdminProduct) {
+    const confirmed = await confirm(`Delete "${product.name}"? This can't be undone.`);
+    if (!confirmed) return;
+
+    try {
+      await deleteAdminProduct(product.id);
+      await reload();
+      toast.show("Product deleted");
+    } catch (deleteError) {
+      toast.show(deleteError instanceof ApiError ? deleteError.message : "Could not delete product.", "error");
+    }
   }
 
   return (
@@ -78,7 +112,7 @@ export default function AdminProductsPage() {
             required
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="min-h-9 rounded-lg border border-brand-cocoa/15 px-2 text-sm"
+            className="min-h-9 rounded-lg border border-brand-cocoa/15 px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -89,7 +123,7 @@ export default function AdminProductsPage() {
             step="0.01"
             value={priceRinggit}
             onChange={(event) => setPriceRinggit(event.target.value)}
-            className="min-h-9 w-24 rounded-lg border border-brand-cocoa/15 px-2 text-sm"
+            className="min-h-9 w-24 rounded-lg border border-brand-cocoa/15 px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -97,7 +131,7 @@ export default function AdminProductsPage() {
           <select
             value={categoryId}
             onChange={(event) => setCategoryId(event.target.value)}
-            className="min-h-9 rounded-lg border border-brand-cocoa/15 px-2 text-sm"
+            className="min-h-9 rounded-lg border border-brand-cocoa/15 px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2"
           >
             <option value="">None</option>
             {categories.map((category) => (
@@ -107,9 +141,9 @@ export default function AdminProductsPage() {
             ))}
           </select>
         </div>
-        <button type="submit" className="min-h-9 rounded-full bg-brand-pink px-4 text-sm font-semibold text-white">
+        <Button type="submit" size="sm" isLoading={isCreating}>
           Add product
-        </button>
+        </Button>
         {error && <p className="text-sm text-red-600">{error}</p>}
       </form>
 
@@ -132,15 +166,25 @@ export default function AdminProductsPage() {
                 <td className="px-4 py-2">{product.category?.name ?? "—"}</td>
                 <td className="px-4 py-2">{formatSen(product.base_price_sen)}</td>
                 <td className="px-4 py-2">
-                  <input type="checkbox" checked={product.is_active} onChange={() => toggleActive(product)} />
+                  <input
+                    type="checkbox"
+                    checked={product.is_active}
+                    disabled={busyProductId === product.id}
+                    onChange={() => toggleActive(product)}
+                  />
                 </td>
                 <td className="px-4 py-2">
-                  <input type="checkbox" checked={product.is_featured} onChange={() => toggleFeatured(product)} />
+                  <input
+                    type="checkbox"
+                    checked={product.is_featured}
+                    disabled={busyProductId === product.id}
+                    onChange={() => toggleFeatured(product)}
+                  />
                 </td>
                 <td className="px-4 py-2">
-                  <button type="button" onClick={() => handleDelete(product.id)} className="text-sm font-medium text-red-600">
+                  <Button variant="danger" size="sm" onClick={() => handleDelete(product)}>
                     Delete
-                  </button>
+                  </Button>
                 </td>
               </tr>
             ))}

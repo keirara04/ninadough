@@ -14,7 +14,7 @@ export function HeroBanner() {
           </p>
           <a
             href="#catalogue"
-            className="inline-flex min-h-11 items-center rounded-full bg-brand-pink px-6 text-sm font-semibold text-white"
+            className="inline-flex min-h-11 items-center rounded-full bg-brand-pink px-6 text-sm font-semibold text-white transition-transform hover:scale-[1.03] active:scale-95"
           >
             Shop preorders
           </a>

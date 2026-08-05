@@ -3,6 +3,7 @@
 namespace Tests\Feature\Checkout;
 
 use App\Models\DeliveryZone;
+use App\Models\DeliveryZonePostcode;
 use App\Models\PreorderDate;
 use App\Models\Product;
 use App\Models\ProductCategory;
@@ -69,7 +70,7 @@ class CheckoutApiTest extends TestCase
         $response->assertJsonPath('data.total_sen', 8000);
     }
 
-    public function test_checkout_quote_requires_delivery_zone_when_fulfilment_is_delivery(): void
+    public function test_checkout_quote_requires_postcode_when_fulfilment_is_delivery(): void
     {
         $product = Product::factory()->create();
         $variant = ProductVariant::factory()->for($product)->create();
@@ -82,16 +83,17 @@ class CheckoutApiTest extends TestCase
         ]);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors('delivery_zone_id');
+        $response->assertJsonValidationErrors('postcode');
     }
 
-    public function test_checkout_quote_applies_delivery_zone_fee(): void
+    public function test_checkout_quote_rejects_client_supplied_delivery_zone_id(): void
     {
         $product = Product::factory()->create(['base_price_sen' => 5000]);
         $variant = ProductVariant::factory()->for($product)->create(['price_adjustment_sen' => 0]);
         $preorderDate = PreorderDate::factory()->create();
-        $zone = DeliveryZone::factory()->create(['delivery_fee_sen' => 700]);
+        $zone = DeliveryZone::factory()->create(['delivery_fee_sen' => 999]);
 
+        // Client sends a zone_id with no matching postcode — server must ignore it and reject.
         $response = $this->postJson('/api/v1/checkout/quote', [
             'items' => [['product_variant_id' => $variant->id, 'quantity' => 1]],
             'preorder_date' => $preorderDate->order_date->toDateString(),
@@ -99,7 +101,42 @@ class CheckoutApiTest extends TestCase
             'delivery_zone_id' => $zone->id,
         ]);
 
+        $response->assertStatus(422);
+        $response->assertJsonValidationErrors('postcode');
+    }
+
+    public function test_checkout_quote_derives_delivery_zone_fee_from_postcode(): void
+    {
+        $product = Product::factory()->create(['base_price_sen' => 5000]);
+        $variant = ProductVariant::factory()->for($product)->create(['price_adjustment_sen' => 0]);
+        $preorderDate = PreorderDate::factory()->create();
+        $zone = DeliveryZone::factory()->create(['delivery_fee_sen' => 700]);
+        DeliveryZonePostcode::factory()->for($zone, 'deliveryZone')->create(['postcode' => '50000']);
+
+        $response = $this->postJson('/api/v1/checkout/quote', [
+            'items' => [['product_variant_id' => $variant->id, 'quantity' => 1]],
+            'preorder_date' => $preorderDate->order_date->toDateString(),
+            'fulfilment_method' => 'delivery',
+            'postcode' => '50000',
+        ]);
+
         $response->assertOk();
         $response->assertJsonPath('data.total_sen', 5700);
+    }
+
+    public function test_checkout_quote_rejects_unserved_postcode(): void
+    {
+        $product = Product::factory()->create();
+        $variant = ProductVariant::factory()->for($product)->create();
+        $preorderDate = PreorderDate::factory()->create();
+
+        $response = $this->postJson('/api/v1/checkout/quote', [
+            'items' => [['product_variant_id' => $variant->id, 'quantity' => 1]],
+            'preorder_date' => $preorderDate->order_date->toDateString(),
+            'fulfilment_method' => 'delivery',
+            'postcode' => '99999',
+        ]);
+
+        $response->assertStatus(422);
     }
 }

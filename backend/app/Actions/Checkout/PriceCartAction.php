@@ -4,12 +4,15 @@ namespace App\Actions\Checkout;
 
 use App\DataTransferObjects\CartQuote;
 use App\Exceptions\PreorderDateUnavailableException;
-use App\Models\DeliveryZone;
 use App\Models\PreorderDate;
 use App\Models\ProductVariant;
 
 class PriceCartAction
 {
+    public function __construct(
+        private readonly ResolveDeliveryZoneAction $resolveDeliveryZoneAction = new ResolveDeliveryZoneAction,
+    ) {}
+
     /**
      * @param  array<int, array{product_variant_id: int, quantity: int}>  $items
      */
@@ -17,7 +20,7 @@ class PriceCartAction
         array $items,
         string $orderDate,
         string $fulfilmentMethod,
-        ?int $deliveryZoneId = null,
+        ?string $deliveryPostcode = null,
     ): CartQuote {
         $preorderDate = PreorderDate::whereDate('order_date', $orderDate)->first();
 
@@ -60,9 +63,11 @@ class PriceCartAction
         }
 
         $deliveryFeeSen = 0;
+        $deliveryZoneId = null;
         if ($fulfilmentMethod === 'delivery') {
-            $zone = DeliveryZone::findOrFail($deliveryZoneId);
+            $zone = $this->resolveDeliveryZoneAction->execute($deliveryPostcode);
             $deliveryFeeSen = $zone->delivery_fee_sen;
+            $deliveryZoneId = $zone->id;
         }
 
         return new CartQuote(
@@ -75,6 +80,7 @@ class PriceCartAction
             orderDate: $preorderDate->order_date->toDateString(),
             remainingCapacity: max(0, $preorderDate->capacity_limit - $preorderDate->reserved_capacity),
             cutoffAt: $preorderDate->cutoff_at->toIso8601String(),
+            deliveryZoneId: $deliveryZoneId,
         );
     }
 }

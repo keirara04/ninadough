@@ -2,6 +2,9 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { useToast } from "@/components/ui/ToastProvider";
+import { ApiError } from "@/lib/api";
 import { getAdminOrder, reviewAdminPayment, updateAdminOrderStatus } from "@/lib/admin-api";
 import { formatSen } from "@/lib/format";
 import type { AdminOrder } from "@/lib/admin-types";
@@ -14,11 +17,20 @@ const STATUSES = [
 export default function AdminOrderDetailPage() {
   const params = useParams<{ id: string }>();
   const orderId = Number(params.id);
+  const toast = useToast();
   const [order, setOrder] = useState<AdminOrder | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
 
   function reload() {
-    return getAdminOrder(orderId).then(setOrder);
+    return getAdminOrder(orderId)
+      .then((result) => {
+        setOrder(result);
+        setLoadError(null);
+      })
+      .catch((error: unknown) => {
+        setLoadError(error instanceof ApiError ? error.message : "Could not load this order.");
+      });
   }
 
   useEffect(() => {
@@ -26,22 +38,38 @@ export default function AdminOrderDetailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderId]);
 
+  if (loadError) {
+    return <p className="text-sm text-red-600">{loadError}</p>;
+  }
+
   if (!order) {
     return <p className="text-sm text-brand-cocoa/60">Loading...</p>;
   }
 
   async function handleStatusChange(status: string) {
     setIsBusy(true);
-    await updateAdminOrderStatus(orderId, status);
-    await reload();
-    setIsBusy(false);
+    try {
+      await updateAdminOrderStatus(orderId, status);
+      await reload();
+      toast.show("Order status updated");
+    } catch (error) {
+      toast.show(error instanceof ApiError ? error.message : "Could not update status.", "error");
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   async function handleReview(paymentId: number, action: "approve" | "reject") {
     setIsBusy(true);
-    await reviewAdminPayment(paymentId, action);
-    await reload();
-    setIsBusy(false);
+    try {
+      await reviewAdminPayment(paymentId, action);
+      await reload();
+      toast.show(action === "approve" ? "Payment approved" : "Payment rejected");
+    } catch (error) {
+      toast.show(error instanceof ApiError ? error.message : "Could not review payment.", "error");
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   return (
@@ -53,7 +81,7 @@ export default function AdminOrderDetailPage() {
             value={order.status}
             disabled={isBusy}
             onChange={(event) => handleStatusChange(event.target.value)}
-            className="min-h-9 rounded-lg border border-brand-cocoa/15 px-2 text-sm capitalize"
+            className="min-h-9 rounded-lg border border-brand-cocoa/15 px-2 text-sm capitalize focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2"
           >
             {STATUSES.map((status) => (
               <option key={status} value={status}>
@@ -104,22 +132,17 @@ export default function AdminOrderDetailPage() {
                 <p className="mt-1 text-xs text-brand-cocoa/50">Reviewed</p>
               ) : (
                 <div className="mt-2 flex gap-2">
-                  <button
-                    type="button"
-                    disabled={isBusy}
+                  <Button
+                    variant="success"
+                    size="sm"
+                    isLoading={isBusy}
                     onClick={() => handleReview(payment.id, "approve")}
-                    className="min-h-9 rounded-full bg-green-600 px-4 text-sm font-semibold text-white disabled:opacity-40"
                   >
                     Approve
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isBusy}
-                    onClick={() => handleReview(payment.id, "reject")}
-                    className="min-h-9 rounded-full bg-red-600 px-4 text-sm font-semibold text-white disabled:opacity-40"
-                  >
+                  </Button>
+                  <Button variant="danger" size="sm" isLoading={isBusy} onClick={() => handleReview(payment.id, "reject")}>
                     Reject
-                  </button>
+                  </Button>
                 </div>
               )}
             </div>

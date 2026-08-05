@@ -14,7 +14,7 @@ class UploadPaymentProofRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'proof' => ['required', 'file', 'image', 'max:5120'],
+            'proof' => ['required', 'file', 'mimes:jpeg,png,webp,pdf', 'max:5120'],
         ];
     }
 }

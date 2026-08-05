@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PaymentProofUpload } from "@/components/PaymentProofUpload";
-import { getOrderStatus } from "@/lib/api";
+import { ApiError, getOrderStatus } from "@/lib/api";
 
 export const dynamic = "force-dynamic";
 
@@ -16,14 +16,20 @@ export default async function OrderStatusPage({
 
   let status: Awaited<ReturnType<typeof getOrderStatus>> | null = null;
   let error: string | null = null;
+  let errorTitle = "Order not found";
 
   if (!signature || !expires) {
     error = "This order link is invalid.";
   } else {
     try {
       status = await getOrderStatus(reference, { signature, expires });
-    } catch {
-      error = "We couldn't find that order.";
+    } catch (fetchError) {
+      if (fetchError instanceof ApiError && fetchError.status === 404) {
+        error = "This order wasn't found.";
+      } else {
+        errorTitle = "Something went wrong";
+        error = "We couldn't load your order right now — please try again in a moment.";
+      }
     }
   }
 
@@ -32,7 +38,7 @@ export default async function OrderStatusPage({
       {error || !status ? (
         <>
           <h1 className="mb-2 font-display text-2xl font-bold text-brand-cocoa">
-            Order not found
+            {errorTitle}
           </h1>
           <p className="mb-6 text-sm text-brand-cocoa/70">{error}</p>
         </>
@@ -59,7 +65,7 @@ export default async function OrderStatusPage({
 
       <Link
         href="/"
-        className="mt-6 inline-block min-h-11 rounded-full bg-brand-pink px-6 py-2.5 text-sm font-semibold text-white"
+        className="mt-6 inline-block min-h-11 rounded-full bg-brand-pink px-6 py-2.5 text-sm font-semibold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2"
       >
         Back to store
       </Link>

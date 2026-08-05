@@ -63,7 +63,7 @@ class OrderApiTest extends TestCase
         $response = $this->postJson('/api/v1/orders', $payload);
 
         $response->assertStatus(422);
-        $response->assertJsonValidationErrors(['delivery_zone_id', 'delivery_address.line_1']);
+        $response->assertJsonValidationErrors(['delivery_address.line_1']);
     }
 
     public function test_returns_409_when_date_is_full(): void

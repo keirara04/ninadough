@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 
 #[Fillable([
     'payment_id', 'storage_disk', 'object_key', 'mime_type', 'size_bytes',
-    'uploaded_at', 'reviewed_at', 'reviewed_by_user_id', 'review_note_internal',
+    'uploaded_at', 'superseded_at', 'reviewed_at', 'reviewed_by_user_id', 'review_note_internal',
 ])]
 class PaymentProof extends Model
 {
@@ -20,6 +20,7 @@ class PaymentProof extends Model
     {
         return [
             'uploaded_at' => 'datetime',
+            'superseded_at' => 'datetime',
             'reviewed_at' => 'datetime',
         ];
     }

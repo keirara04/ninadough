@@ -20,7 +20,7 @@ class CheckoutQuoteRequest extends FormRequest
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'preorder_date' => ['required', 'date_format:Y-m-d', new PreorderDateExists],
             'fulfilment_method' => ['required', 'string', 'in:pickup,delivery'],
-            'delivery_zone_id' => ['required_if:fulfilment_method,delivery', 'nullable', 'integer', 'exists:delivery_zones,id'],
+            'postcode' => ['required_if:fulfilment_method,delivery', 'nullable', 'string', 'max:20'],
         ];
     }
 }

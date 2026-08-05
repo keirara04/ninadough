@@ -4,7 +4,6 @@ namespace App\Http\Resources\Admin;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\Storage;
 
 class AdminOrderResource extends JsonResource
 {
@@ -20,6 +19,8 @@ class AdminOrderResource extends JsonResource
             'customer_name' => $this->customer_name_snapshot,
             'customer_phone' => $this->customer_phone_snapshot,
             'total_sen' => $this->total_sen,
+            'rejection_message' => $this->rejection_message,
+            'refund_required' => $this->refund_required,
             'created_at' => $this->created_at->toIso8601String(),
             'items' => $this->whenLoaded('items', fn () => $this->items->map(fn ($item) => [
                 'product_name' => $item->product_name_snapshot,
@@ -33,8 +34,9 @@ class AdminOrderResource extends JsonResource
                 'amount_sen' => $payment->amount_sen,
                 'proofs' => $payment->proofs->map(fn ($proof) => [
                     'id' => $proof->id,
-                    'url' => Storage::disk($proof->storage_disk)->url($proof->object_key),
+                    'url' => route('admin.payment-proofs.show', ['proof' => $proof->id]),
                     'uploaded_at' => $proof->uploaded_at->toIso8601String(),
+                    'superseded_at' => $proof->superseded_at?->toIso8601String(),
                     'reviewed_at' => $proof->reviewed_at?->toIso8601String(),
                 ]),
             ])),

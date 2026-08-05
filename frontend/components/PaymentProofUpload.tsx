@@ -70,7 +70,7 @@ export function PaymentProofUpload({
         <button
           type="submit"
           disabled={!file || isSubmitting}
-          className="min-h-11 rounded-full bg-brand-pink text-sm font-semibold text-white disabled:opacity-40"
+          className="min-h-11 rounded-full bg-brand-pink text-sm font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-40"
         >
           {isSubmitting ? "Uploading..." : "Upload proof of payment"}
         </button>

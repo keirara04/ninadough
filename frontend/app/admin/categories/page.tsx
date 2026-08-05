@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/Button";
+import { useConfirm } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/ToastProvider";
+import { ApiError } from "@/lib/api";
 import {
   createAdminCategory,
   deleteAdminCategory,
@@ -10,10 +14,13 @@ import {
 import type { AdminCategory } from "@/lib/admin-types";
 
 export default function AdminCategoriesPage() {
+  const toast = useToast();
+  const confirm = useConfirm();
   const [categories, setCategories] = useState<AdminCategory[]>([]);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
 
   function reload() {
     return getAdminCategories().then(setCategories);
@@ -26,19 +33,43 @@ export default function AdminCategoriesPage() {
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    setIsCreating(true);
     try {
       await createAdminCategory({ name, slug: slug || name.toLowerCase().replace(/\s+/g, "-") });
       setName("");
       setSlug("");
       await reload();
+      toast.show("Category added");
     } catch {
       setError("Could not create category — slug may already be in use.");
+    } finally {
+      setIsCreating(false);
     }
   }
 
-  async function handleDelete(id: number) {
-    await deleteAdminCategory(id);
-    await reload();
+  async function handleRename(category: AdminCategory, newName: string) {
+    if (newName === category.name) return;
+    try {
+      await updateAdminCategory(category.id, { name: newName });
+      await reload();
+      toast.show("Category updated");
+    } catch (renameError) {
+      toast.show(renameError instanceof ApiError ? renameError.message : "Could not rename category.", "error");
+      await reload();
+    }
+  }
+
+  async function handleDelete(category: AdminCategory) {
+    const confirmed = await confirm(`Delete category "${category.name}"? This can't be undone.`);
+    if (!confirmed) return;
+
+    try {
+      await deleteAdminCategory(category.id);
+      await reload();
+      toast.show("Category deleted");
+    } catch (deleteError) {
+      toast.show(deleteError instanceof ApiError ? deleteError.message : "Could not delete category.", "error");
+    }
   }
 
   return (
@@ -52,7 +83,7 @@ export default function AdminCategoriesPage() {
             required
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="min-h-9 rounded-lg border border-brand-cocoa/15 px-2 text-sm"
+            className="min-h-9 rounded-lg border border-brand-cocoa/15 px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -60,12 +91,12 @@ export default function AdminCategoriesPage() {
           <input
             value={slug}
             onChange={(event) => setSlug(event.target.value)}
-            className="min-h-9 rounded-lg border border-brand-cocoa/15 px-2 text-sm"
+            className="min-h-9 rounded-lg border border-brand-cocoa/15 px-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2"
           />
         </div>
-        <button type="submit" className="min-h-9 rounded-full bg-brand-pink px-4 text-sm font-semibold text-white">
+        <Button type="submit" size="sm" isLoading={isCreating}>
           Add category
-        </button>
+        </Button>
         {error && <p className="text-sm text-red-600">{error}</p>}
       </form>
 
@@ -75,18 +106,14 @@ export default function AdminCategoriesPage() {
             <div className="flex items-center gap-3">
               <input
                 defaultValue={category.name}
-                onBlur={(event) => updateAdminCategory(category.id, { name: event.target.value }).then(reload)}
-                className="rounded border border-transparent px-1 text-sm hover:border-brand-cocoa/15 focus:border-brand-cocoa/30"
+                onBlur={(event) => handleRename(category, event.target.value)}
+                className="rounded border border-transparent px-1 text-sm hover:border-brand-cocoa/15 focus:border-brand-cocoa/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50"
               />
               <span className="text-xs text-brand-cocoa/40">/{category.slug}</span>
             </div>
-            <button
-              type="button"
-              onClick={() => handleDelete(category.id)}
-              className="text-sm font-medium text-red-600"
-            >
+            <Button variant="danger" size="sm" onClick={() => handleDelete(category)}>
               Delete
-            </button>
+            </Button>
           </div>
         ))}
       </div>
