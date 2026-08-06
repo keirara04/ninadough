@@ -23,15 +23,25 @@ function formatCutoff(cutoffAt: string): string {
   });
 }
 
+function earliestAllowedDate(minLeadTimeDays: number): string {
+  const leadDays = Number.isFinite(minLeadTimeDays) ? minLeadTimeDays : 0;
+  const date = new Date();
+  date.setDate(date.getDate() + leadDays);
+  return date.toISOString().slice(0, 10);
+}
+
 export function DatePickerModal({
   dates,
+  minLeadTimeDays = 0,
   onSelect,
   onClose,
 }: {
   dates: PreorderDate[];
+  minLeadTimeDays?: number;
   onSelect: (date: PreorderDate) => void;
   onClose: () => void;
 }) {
+  const earliestAllowed = earliestAllowedDate(minLeadTimeDays);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -73,7 +83,8 @@ export function DatePickerModal({
 
         <ul className="flex flex-col gap-2">
           {dates.map((date) => {
-            const isOrderable = date.status === "open";
+            const meetsLeadTime = date.order_date >= earliestAllowed;
+            const isOrderable = date.status === "open" && meetsLeadTime;
 
             return (
               <li key={date.order_date}>
@@ -94,9 +105,14 @@ export function DatePickerModal({
                         Order by {formatCutoff(date.cutoff_at)}
                       </span>
                     )}
+                    {date.status === "open" && !meetsLeadTime && (
+                      <span className="block text-xs text-brand-cocoa/40">
+                        Needs {minLeadTimeDays} day{minLeadTimeDays === 1 ? "" : "s"} lead time
+                      </span>
+                    )}
                   </span>
                   <span className="text-xs font-medium uppercase tracking-wide">
-                    {date.status === "open" ? `${date.remaining_capacity} left` : date.status}
+                    {!meetsLeadTime && date.status === "open" ? "" : date.status === "open" ? `${date.remaining_capacity} left` : date.status}
                   </span>
                 </button>
               </li>
