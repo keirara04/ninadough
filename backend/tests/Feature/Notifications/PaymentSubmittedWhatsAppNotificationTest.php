@@ -17,7 +17,7 @@ class PaymentSubmittedWhatsAppNotificationTest extends TestCase
 
     public function test_notifies_every_active_admin_with_a_phone_number(): void
     {
-        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.123']]], 200)]);
+        Http::fake(['api.fonnte.com/*' => Http::response(['status' => true, 'id' => ['wamid.123']], 200)]);
 
         $owner = User::factory()->create(['role' => 'owner', 'is_active' => true, 'phone_e164' => '+60111111111']);
         $staff = User::factory()->create(['role' => 'staff', 'is_active' => true, 'phone_e164' => '+60122222222']);
@@ -32,7 +32,7 @@ class PaymentSubmittedWhatsAppNotificationTest extends TestCase
 
     public function test_logs_failure_without_throwing(): void
     {
-        Http::fake(['graph.facebook.com/*' => Http::response(['error' => 'bad request'], 400)]);
+        Http::fake(['api.fonnte.com/*' => Http::response(['status' => false, 'reason' => 'bad request'], 200)]);
 
         User::factory()->create(['role' => 'owner', 'is_active' => true, 'phone_e164' => '+60111111111']);
         $order = Order::factory()->create(['status' => 'payment_submitted']);
@@ -44,7 +44,7 @@ class PaymentSubmittedWhatsAppNotificationTest extends TestCase
 
     public function test_ignores_inactive_admins_and_admins_without_a_phone(): void
     {
-        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.123']]], 200)]);
+        Http::fake(['api.fonnte.com/*' => Http::response(['status' => true, 'id' => ['wamid.123']], 200)]);
 
         User::factory()->create(['role' => 'owner', 'is_active' => false, 'phone_e164' => '+60111111111']);
         User::factory()->create(['role' => 'staff', 'is_active' => true, 'phone_e164' => null]);

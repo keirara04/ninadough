@@ -8,6 +8,7 @@ import type {
   PreorderDate,
   Product,
   ProductCategory,
+  TimeSlot,
 } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
@@ -83,8 +84,17 @@ export async function getCategories(): Promise<ProductCategory[]> {
   return data;
 }
 
-export async function getDeliveryZones(): Promise<DeliveryZone[]> {
-  const { data } = await fetchJson<ApiCollection<DeliveryZone>>("/delivery-zones");
+export async function lookupDeliveryFee(postcode: string): Promise<DeliveryZone> {
+  const { data } = await fetchJson<ApiResource<DeliveryZone>>(
+    `/delivery-zones/lookup?postcode=${encodeURIComponent(postcode)}`,
+  );
+  return data;
+}
+
+export async function getTimeSlots(date: string, fulfilmentMethod: "pickup" | "delivery"): Promise<TimeSlot[]> {
+  const { data } = await fetchJson<ApiCollection<TimeSlot>>(
+    `/time-slots?date=${encodeURIComponent(date)}&fulfilment_method=${fulfilmentMethod}`,
+  );
   return data;
 }
 

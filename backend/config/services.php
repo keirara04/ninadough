@@ -29,8 +29,7 @@ return [
     ],
 
     'whatsapp' => [
-        'token' => env('WHATSAPP_CLOUD_API_TOKEN'),
-        'phone_number_id' => env('WHATSAPP_CLOUD_API_PHONE_NUMBER_ID'),
+        'token' => env('FONNTE_TOKEN'),
     ],
 
     'slack' => [

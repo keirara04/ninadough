@@ -25,6 +25,7 @@ class ProductResource extends JsonResource
                 'slug' => $this->category->slug,
             ] : null,
             'images' => $this->images->map(fn ($image) => [
+                'id' => $image->id,
                 'url' => $image->public_url,
                 'alt_text' => $image->alt_text,
                 'is_primary' => $image->is_primary,
@@ -43,6 +44,7 @@ class ProductResource extends JsonResource
                 'name' => $variant->name,
                 'price_sen' => $this->base_price_sen + $variant->price_adjustment_sen,
                 'capacity_units' => $variant->capacity_units ?? $this->default_capacity_units,
+                'is_available' => ($variant->stock_quantity - $variant->reserved_quantity) > 0,
                 'option_values' => $variant->optionValues->map(fn ($value) => $value->name),
             ]),
         ];

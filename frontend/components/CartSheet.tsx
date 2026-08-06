@@ -1,11 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DatePickerModal } from "@/components/DatePickerModal";
-import { getItemCount, getSubtotalSen, useCartStore, type FulfilmentMethod } from "@/lib/cart-store";
+import { ApiError, getTimeSlots, lookupDeliveryFee } from "@/lib/api";
+import {
+  getItemCount,
+  getMaxLeadTimeDays,
+  getSubtotalSen,
+  useCartStore,
+  type FulfilmentMethod,
+} from "@/lib/cart-store";
 import { formatSen } from "@/lib/format";
-import type { PreorderDate } from "@/lib/types";
+import type { PreorderDate, TimeSlot } from "@/lib/types";
 
 const WHATSAPP_NUMBER = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "";
 
@@ -18,15 +25,78 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
   const removeItem = useCartStore((state) => state.removeItem);
   const setPreorderDate = useCartStore((state) => state.setPreorderDate);
   const setFulfilmentMethod = useCartStore((state) => state.setFulfilmentMethod);
+  const timeSlotId = useCartStore((state) => state.timeSlotId);
+  const setTimeSlotId = useCartStore((state) => state.setTimeSlotId);
+  const postcode = useCartStore((state) => state.postcode);
+  const setPostcode = useCartStore((state) => state.setPostcode);
+  const deliveryQuote = useCartStore((state) => state.deliveryQuote);
+  const setDeliveryQuote = useCartStore((state) => state.setDeliveryQuote);
   const isCollapsed = useCartStore((state) => state.isCartCollapsed);
   const setIsCollapsed = useCartStore((state) => state.setCartCollapsed);
 
   const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
   const [isExpanded, setIsExpanded] = useState(true);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [postcodeError, setPostcodeError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (fulfilmentMethod !== "delivery" || !postcode || postcode.trim().length < 4) {
+      return;
+    }
+
+    let cancelled = false;
+    const timeout = window.setTimeout(() => {
+      Promise.resolve()
+        .then(() => setPostcodeError(null))
+        .then(() => lookupDeliveryFee(postcode.trim()))
+        .then((zone) => {
+          if (cancelled) return;
+          setDeliveryQuote({ postcode: postcode.trim(), zoneName: zone.name, deliveryFeeSen: zone.delivery_fee_sen });
+        })
+        .catch((error: unknown) => {
+          if (cancelled) return;
+          setDeliveryQuote(null);
+          setPostcodeError(error instanceof ApiError ? error.message : "Couldn't look up this postcode.");
+        });
+    }, 400);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeout);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [postcode, fulfilmentMethod]);
+
+  useEffect(() => {
+    if (!preorderDate) {
+      Promise.resolve().then(() => setTimeSlots([]));
+      return;
+    }
+
+    let cancelled = false;
+    Promise.resolve()
+      .then(() => getTimeSlots(preorderDate, fulfilmentMethod))
+      .then((slots) => {
+        if (!cancelled) setTimeSlots(slots);
+      })
+      .catch(() => {
+        if (!cancelled) setTimeSlots([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [preorderDate, fulfilmentMethod]);
 
   if (items.length === 0) {
     return null;
   }
+
+  // Mandatory per plan §0a: a non-empty slot list for this date+method means
+  // a slot must be chosen before checkout; an empty list means slots aren't
+  // configured for this date/method at all, so the step is skipped entirely.
+  const slotRequired = timeSlots.length > 0;
+  const slotSatisfied = !slotRequired || timeSlotId !== null;
 
   const itemCount = getItemCount(items);
   const subtotalSen = getSubtotalSen(items);
@@ -155,9 +225,58 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
           ))}
         </div>
 
+        {fulfilmentMethod === "delivery" && (
+          <div className="mb-2">
+            <label className="mb-1.5 block text-xs font-medium text-brand-cocoa/70">
+              Delivery postcode
+            </label>
+            <input
+              value={postcode ?? ""}
+              onChange={(event) => setPostcode(event.target.value)}
+              placeholder="e.g. 50450"
+              className="min-h-11 w-full rounded-xl border border-brand-cocoa/15 px-3 text-sm"
+            />
+            {postcodeError && <p className="mt-1 text-xs text-red-600">{postcodeError}</p>}
+            {deliveryQuote && (
+              <p className="mt-1 text-xs text-brand-cocoa/60">
+                {deliveryQuote.zoneName} &middot; {formatSen(deliveryQuote.deliveryFeeSen)} delivery
+              </p>
+            )}
+          </div>
+        )}
+
+        {slotRequired && (
+          <div className="mb-2">
+            <p className="mb-1.5 text-xs font-medium text-brand-cocoa/70">Choose a time slot</p>
+            <div className="flex flex-wrap gap-2">
+              {timeSlots.map((slot) => {
+                const isFull = slot.remaining_capacity <= 0;
+                return (
+                  <button
+                    key={slot.id}
+                    type="button"
+                    disabled={isFull}
+                    onClick={() => setTimeSlotId(slot.id)}
+                    className={`min-h-11 rounded-full border px-3 text-sm font-medium transition active:scale-[0.98] ${
+                      timeSlotId === slot.id
+                        ? "border-brand-gold bg-brand-gold/20 text-brand-cocoa"
+                        : isFull
+                          ? "border-brand-cocoa/10 text-brand-cocoa/30"
+                          : "border-brand-cocoa/15 text-brand-cocoa/70"
+                    }`}
+                  >
+                    {slot.label} &middot; {slot.starts_at}-{slot.ends_at}
+                    {isFull ? " · Full" : ""}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <button
           type="button"
-          disabled={!selectedDate}
+          disabled={!selectedDate || !slotSatisfied}
           onClick={() => router.push("/checkout")}
           className="mb-2 min-h-11 w-full rounded-full bg-brand-cocoa text-sm font-semibold text-white transition-transform active:scale-[0.98] disabled:opacity-40"
         >
@@ -180,6 +299,7 @@ export function CartSheet({ preorderDates }: { preorderDates: PreorderDate[] }) 
       {isDatePickerOpen && (
         <DatePickerModal
           dates={preorderDates}
+          minLeadTimeDays={getMaxLeadTimeDays(items)}
           onClose={() => setIsDatePickerOpen(false)}
           onSelect={(date) => {
             setPreorderDate(date.order_date);

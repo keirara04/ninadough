@@ -15,6 +15,7 @@ class DatabaseSeeder extends Seeder
             ProductCategorySeeder::class,
             MockProductSeeder::class,
             PreorderDateSeeder::class,
+            TimeSlotSeeder::class,
             DeliveryZoneSeeder::class,
             OrderDemoSeeder::class,
         ]);

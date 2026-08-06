@@ -52,7 +52,7 @@ class NotifyAdminPaymentSubmitted implements ShouldQueue
                 'template_key' => 'admin_payment_submitted',
                 'recipient' => $recipient->phone_e164,
                 'status' => 'sent',
-                'provider_message_id' => $result['messages'][0]['id'] ?? null,
+                'provider_message_id' => $result['id'][0] ?? null,
                 'sent_at' => now(),
             ]);
         } catch (\Throwable $e) {

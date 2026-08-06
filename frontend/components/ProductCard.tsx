@@ -22,6 +22,7 @@ export function ProductCard({ product }: { product: Product }) {
     product.variants[0];
 
   const primaryImage = product.images.find((image) => image.is_primary) ?? product.images[0];
+  const allSoldOut = product.variants.every((variant) => !variant.is_available);
 
   if (!selectedVariant) {
     return null;
@@ -49,6 +50,12 @@ export function ProductCard({ product }: { product: Product }) {
             </div>
           )}
         </Link>
+
+        {allSoldOut && (
+          <span className="absolute left-2 top-2 rounded-full bg-brand-cocoa/80 px-2 py-1 text-xs font-medium text-white">
+            Sold out
+          </span>
+        )}
 
         <button
           type="button"
@@ -80,6 +87,12 @@ export function ProductCard({ product }: { product: Product }) {
           </h3>
         </Link>
 
+        {product.min_lead_time_days > 0 && !allSoldOut && (
+          <span className="w-fit rounded-full bg-brand-gold/15 px-2 py-0.5 text-xs font-medium text-brand-cocoa">
+            Pre-order {product.min_lead_time_days}d
+          </span>
+        )}
+
         {product.variants.length > 1 && (
           <div>
             <p className="mb-1 text-xs text-brand-cocoa/60">Flavour</p>
@@ -88,11 +101,14 @@ export function ProductCard({ product }: { product: Product }) {
                 <button
                   key={variant.id}
                   type="button"
+                  disabled={!variant.is_available}
                   onClick={() => setSelectedVariantId(variant.id)}
                   className={`rounded-full border px-2.5 py-1 text-xs font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2 ${
-                    variant.id === selectedVariant.id
-                      ? "border-brand-pink bg-brand-pink text-white"
-                      : "border-brand-cocoa/20 text-brand-cocoa/80"
+                    !variant.is_available
+                      ? "border-brand-cocoa/10 text-brand-cocoa/30 line-through"
+                      : variant.id === selectedVariant.id
+                        ? "border-brand-pink bg-brand-pink text-white"
+                        : "border-brand-cocoa/20 text-brand-cocoa/80"
                   }`}
                 >
                   {variant.option_values.join(" ") || variant.name}
@@ -108,6 +124,7 @@ export function ProductCard({ product }: { product: Product }) {
           </span>
           <Button
             size="sm"
+            disabled={!selectedVariant.is_available}
             onClick={() => {
               addItem({
                 productId: product.id,
@@ -116,11 +133,12 @@ export function ProductCard({ product }: { product: Product }) {
                 variantName: selectedVariant.option_values.join(" ") || selectedVariant.name,
                 unitPriceSen: selectedVariant.price_sen,
                 capacityUnitsEach: selectedVariant.capacity_units,
+                minLeadTimeDays: product.min_lead_time_days,
               });
               toast.show("Added to cart");
             }}
           >
-            Add
+            {selectedVariant.is_available ? "Add" : "Sold out"}
           </Button>
         </div>
       </div>

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\AdminDashboardController;
 use App\Http\Controllers\Api\Admin\AdminOrderController;
 use App\Http\Controllers\Api\Admin\AdminPaymentController;
 use App\Http\Controllers\Api\Admin\AdminPaymentProofController;
+use App\Http\Controllers\Api\Admin\AdminPreorderDateController;
 use App\Http\Controllers\Api\Admin\AdminProductController;
 use App\Http\Controllers\Api\Admin\AdminProductImageController;
 use App\Http\Controllers\Api\Admin\AdminTimeSlotController;
@@ -68,6 +69,10 @@ Route::prefix('v1')->group(function () {
                 Route::post('/products', [AdminProductController::class, 'store']);
                 Route::patch('/products/{product}', [AdminProductController::class, 'update']);
                 Route::delete('/products/{product}', [AdminProductController::class, 'destroy']);
+
+                Route::get('/preorder-dates', [AdminPreorderDateController::class, 'index']);
+                Route::post('/preorder-dates', [AdminPreorderDateController::class, 'store']);
+                Route::patch('/preorder-dates/{preorderDate}', [AdminPreorderDateController::class, 'update']);
 
                 Route::get('/preorder-dates/{preorderDate}/time-slots', [AdminTimeSlotController::class, 'index']);
                 Route::post('/preorder-dates/{preorderDate}/time-slots', [AdminTimeSlotController::class, 'store']);

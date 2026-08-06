@@ -7,12 +7,16 @@ import { adminLogout } from "@/lib/admin-api";
 
 const FOCUS_RING =
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2 rounded";
-import { useAdminStore } from "@/lib/admin-store";
+import { isOwner, useAdminStore } from "@/lib/admin-store";
+
+const OWNER_ONLY_PATHS = ["/admin/products", "/admin/categories", "/admin/preorder-dates"];
 
 const NAV_LINKS = [
-  { label: "Orders", href: "/admin" },
-  { label: "Products", href: "/admin/products" },
-  { label: "Categories", href: "/admin/categories" },
+  { label: "Dashboard", href: "/admin", ownerOnly: true },
+  { label: "Orders", href: "/admin/orders", ownerOnly: false },
+  { label: "Products", href: "/admin/products", ownerOnly: true },
+  { label: "Categories", href: "/admin/categories", ownerOnly: true },
+  { label: "Preorder dates", href: "/admin/preorder-dates", ownerOnly: true },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -23,20 +27,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const clearSession = useAdminStore((state) => state.clearSession);
 
   const isLoginPage = pathname === "/admin/login";
+  const isOwnerOnlyPath = pathname === "/admin" || OWNER_ONLY_PATHS.some((path) => pathname.startsWith(path));
+  const staffBlocked = !!token && !isOwner(user) && isOwnerOnlyPath;
 
   useEffect(() => {
     if (!token && !isLoginPage) {
       router.replace("/admin/login");
+      return;
     }
-  }, [token, isLoginPage, router]);
+    if (staffBlocked) {
+      router.replace("/admin/orders");
+    }
+  }, [token, isLoginPage, staffBlocked, router]);
 
   if (isLoginPage) {
     return <>{children}</>;
   }
 
-  if (!token) {
+  if (!token || staffBlocked) {
     return null;
   }
+
+  const visibleLinks = NAV_LINKS.filter((link) => !link.ownerOnly || isOwner(user));
 
   return (
     <div className="min-h-screen bg-brand-cream/40">
@@ -64,12 +76,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           <nav className="scrollbar-none flex items-center gap-4 overflow-x-auto">
-            {NAV_LINKS.map((link) => (
+            {visibleLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={`shrink-0 text-sm font-medium ${FOCUS_RING} ${
-                  pathname === link.href ? "text-brand-pink" : "text-brand-cocoa/70 hover:text-brand-cocoa"
+                  pathname === link.href || (link.href !== "/admin" && pathname.startsWith(link.href))
+                    ? "text-brand-pink"
+                    : "text-brand-cocoa/70 hover:text-brand-cocoa"
                 }`}
               >
                 {link.label}

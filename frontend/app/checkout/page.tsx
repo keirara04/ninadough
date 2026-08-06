@@ -1,26 +1,26 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
-import { ApiError, getDeliveryZones, postCheckoutQuote, postOrder } from "@/lib/api";
+import { ApiError, postCheckoutQuote, postOrder } from "@/lib/api";
 import { getSubtotalSen, useCartStore } from "@/lib/cart-store";
 import { formatSen } from "@/lib/format";
-import type { CartQuote, DeliveryZone } from "@/lib/types";
+import type { CartQuote } from "@/lib/types";
 
 export default function CheckoutPage() {
   const router = useRouter();
   const items = useCartStore((state) => state.items);
   const preorderDate = useCartStore((state) => state.preorderDate);
   const fulfilmentMethod = useCartStore((state) => state.fulfilmentMethod);
+  const timeSlotId = useCartStore((state) => state.timeSlotId);
+  const cartPostcode = useCartStore((state) => state.postcode);
   const idempotencyKey = useCartStore((state) => state.idempotencyKey);
   const clearCart = useCartStore((state) => state.clear);
 
-  const [deliveryZones, setDeliveryZones] = useState<DeliveryZone[]>([]);
-  const [zonesError, setZonesError] = useState<string | null>(null);
-  const [deliveryZoneId, setDeliveryZoneId] = useState<number | null>(null);
   const [quote, setQuote] = useState<CartQuote | null>(null);
   const [quoteError, setQuoteError] = useState<string | null>(null);
+  const [postcodeError, setPostcodeError] = useState<string | null>(null);
 
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
@@ -31,71 +31,74 @@ export default function CheckoutPage() {
   const [addressLine2, setAddressLine2] = useState("");
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
-  const [postcode, setPostcode] = useState("");
+  const [postcode, setPostcode] = useState(cartPostcode ?? "");
+  const [notes, setNotes] = useState("");
+  const [cardMessage, setCardMessage] = useState("");
+  const [allergiesNote, setAllergiesNote] = useState("");
+  const [hidePriceOnPackage, setHidePriceOnPackage] = useState(false);
 
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const hasSubmittedRef = useRef(false);
 
   useEffect(() => {
+    // Skip once an order has been placed — clearing the cart on success
+    // empties `items`/`preorderDate` while this page is still mid-navigation
+    // to /orders/..., and this guard would otherwise redirect to "/" first.
+    if (hasSubmittedRef.current) return;
     if (items.length === 0 || !preorderDate) {
       router.replace("/");
     }
   }, [items.length, preorderDate, router]);
 
   useEffect(() => {
-    if (fulfilmentMethod === "delivery") {
-      Promise.resolve()
-        .then(() => setZonesError(null))
-        .then(() => getDeliveryZones())
-        .then((zones) => {
-          setDeliveryZones(zones);
-          setDeliveryZoneId((current) => current ?? zones[0]?.id ?? null);
-        })
-        .catch(() => {
-          setDeliveryZones([]);
-          setZonesError("Couldn't load delivery zones — try refreshing the page.");
-        });
-    }
-  }, [fulfilmentMethod]);
-
-  useEffect(() => {
     if (!preorderDate || items.length === 0) {
       return;
     }
 
-    if (fulfilmentMethod === "delivery" && !deliveryZoneId) {
+    if (fulfilmentMethod === "delivery" && postcode.trim().length < 4) {
+      Promise.resolve().then(() => setQuote(null));
       return;
     }
 
     let cancelled = false;
 
-    Promise.resolve()
-      .then(() => setQuoteError(null))
-      .then(() =>
-        postCheckoutQuote({
-          items: items.map((line) => ({ product_variant_id: line.variantId, quantity: line.quantity })),
-          preorder_date: preorderDate,
-          fulfilment_method: fulfilmentMethod,
-          delivery_zone_id: fulfilmentMethod === "delivery" ? deliveryZoneId : null,
-        }),
-      )
-      .then((result) => {
-        if (!cancelled) {
-          setQuote(result);
-        }
-      })
-      .catch((error: unknown) => {
-        if (!cancelled) {
+    const timeout = window.setTimeout(() => {
+      Promise.resolve()
+        .then(() => {
+          setQuoteError(null);
+          setPostcodeError(null);
+        })
+        .then(() =>
+          postCheckoutQuote({
+            items: items.map((line) => ({ product_variant_id: line.variantId, quantity: line.quantity })),
+            preorder_date: preorderDate,
+            fulfilment_method: fulfilmentMethod,
+            postcode: fulfilmentMethod === "delivery" ? postcode.trim() : null,
+          }),
+        )
+        .then((result) => {
+          if (!cancelled) {
+            setQuote(result);
+          }
+        })
+        .catch((error: unknown) => {
+          if (cancelled) return;
           setQuote(null);
-          setQuoteError(error instanceof ApiError ? error.message : "Could not price your order.");
-        }
-      });
+          if (error instanceof ApiError && error.errors?.postcode) {
+            setPostcodeError(error.errors.postcode[0]);
+          } else {
+            setQuoteError(error instanceof ApiError ? error.message : "Could not price your order.");
+          }
+        });
+    }, 400);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timeout);
     };
-  }, [items, preorderDate, fulfilmentMethod, deliveryZoneId]);
+  }, [items, preorderDate, fulfilmentMethod, postcode]);
 
   if (items.length === 0 || !preorderDate) {
     return null;
@@ -114,7 +117,12 @@ export default function CheckoutPage() {
         items: items.map((line) => ({ product_variant_id: line.variantId, quantity: line.quantity })),
         preorder_date: preorderDate!,
         fulfilment_method: fulfilmentMethod,
-        delivery_zone_id: fulfilmentMethod === "delivery" ? deliveryZoneId : null,
+        time_slot_id: timeSlotId,
+        payment_method: "bank_transfer",
+        notes: notes || null,
+        card_message: cardMessage || null,
+        allergies_note: allergiesNote || null,
+        hide_price_on_package: hidePriceOnPackage,
         delivery_address:
           fulfilmentMethod === "delivery"
             ? {
@@ -136,6 +144,7 @@ export default function CheckoutPage() {
         },
       });
 
+      hasSubmittedRef.current = true;
       clearCart();
       const statusUrl = new URL(order.status_url);
       const signature = statusUrl.searchParams.get("signature") ?? "";
@@ -201,25 +210,7 @@ export default function CheckoutPage() {
         {fulfilmentMethod === "delivery" && (
           <section className="rounded-2xl bg-white p-4 shadow-sm">
             <h2 className="mb-3 font-semibold text-brand-cocoa">Delivery address</h2>
-            {zonesError && <p className="mb-3 text-sm text-red-600">{zonesError}</p>}
             <div className="flex flex-col gap-3">
-              <Field label="Delivery zone" error={fieldError("delivery_zone_id")}>
-                <select
-                  required
-                  value={deliveryZoneId ?? ""}
-                  onChange={(event) => setDeliveryZoneId(Number(event.target.value))}
-                  className="min-h-11 w-full rounded-xl border border-brand-cocoa/15 px-3 text-sm"
-                >
-                  <option value="" disabled>
-                    Select a zone
-                  </option>
-                  {deliveryZones.map((zone) => (
-                    <option key={zone.id} value={zone.id}>
-                      {zone.name} &middot; {formatSen(zone.delivery_fee_sen)}
-                    </option>
-                  ))}
-                </select>
-              </Field>
               <Field label="Recipient name" error={fieldError("delivery_address.recipient_name")}>
                 <input
                   required
@@ -269,7 +260,10 @@ export default function CheckoutPage() {
                   />
                 </Field>
               </div>
-              <Field label="Postcode" error={fieldError("delivery_address.postcode")}>
+              <Field
+                label="Postcode"
+                error={postcodeError ?? fieldError("delivery_address.postcode")}
+              >
                 <input
                   required
                   value={postcode}
@@ -277,9 +271,59 @@ export default function CheckoutPage() {
                   className="min-h-11 w-full rounded-xl border border-brand-cocoa/15 px-3 text-sm"
                 />
               </Field>
+              {quote && (
+                <p className="text-xs text-brand-cocoa/60">
+                  Delivery fee: {formatSen(quote.delivery_fee_sen)}
+                </p>
+              )}
             </div>
           </section>
         )}
+
+        <section className="rounded-2xl bg-white p-4 shadow-sm">
+          <h2 className="mb-3 font-semibold text-brand-cocoa">Extra details (optional)</h2>
+          <div className="flex flex-col gap-3">
+            <Field label="Order notes" error={fieldError("notes")}>
+              <textarea
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                maxLength={1000}
+                rows={2}
+                className="w-full rounded-xl border border-brand-cocoa/15 px-3 py-2 text-sm"
+              />
+            </Field>
+            <Field label="Message on card" error={fieldError("card_message")}>
+              <input
+                value={cardMessage}
+                onChange={(event) => setCardMessage(event.target.value)}
+                maxLength={200}
+                className="min-h-11 w-full rounded-xl border border-brand-cocoa/15 px-3 text-sm"
+              />
+            </Field>
+            <Field label="Allergies" error={fieldError("allergies_note")}>
+              <textarea
+                value={allergiesNote}
+                onChange={(event) => setAllergiesNote(event.target.value)}
+                maxLength={500}
+                rows={2}
+                className="w-full rounded-xl border border-brand-cocoa/15 px-3 py-2 text-sm"
+              />
+              <p className="mt-1 text-xs text-brand-cocoa/50">
+                Our kitchen handles nuts, dairy, egg, and gluten — we take care with allergy notes but
+                can&apos;t guarantee an allergen-free product.
+              </p>
+            </Field>
+            <label className="flex min-h-11 items-center gap-2 text-sm text-brand-cocoa">
+              <input
+                type="checkbox"
+                checked={hidePriceOnPackage}
+                onChange={(event) => setHidePriceOnPackage(event.target.checked)}
+                className="h-5 w-5 rounded border-brand-cocoa/30"
+              />
+              This is a gift — don&apos;t include the price on the package
+            </label>
+          </div>
+        </section>
 
         <section className="rounded-2xl bg-white p-4 shadow-sm">
           <h2 className="mb-3 font-semibold text-brand-cocoa">Order summary</h2>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { useConfirm } from "@/components/ui/ConfirmDialog";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -8,9 +8,12 @@ import { ApiError } from "@/lib/api";
 import {
   createAdminProduct,
   deleteAdminProduct,
+  deleteAdminProductImage,
   getAdminCategories,
   getAdminProducts,
+  setAdminProductImagePrimary,
   updateAdminProduct,
+  uploadAdminProductImage,
 } from "@/lib/admin-api";
 import { formatSen } from "@/lib/format";
 import type { AdminCategory, AdminProduct } from "@/lib/admin-types";
@@ -26,6 +29,61 @@ export default function AdminProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [busyProductId, setBusyProductId] = useState<string | null>(null);
+  const [expandedImagesFor, setExpandedImagesFor] = useState<string | null>(null);
+  const [imageError, setImageError] = useState<string | null>(null);
+
+  const MAX_IMAGES = 6;
+
+  async function handleUploadImage(product: AdminProduct, file: File) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
+      setImageError("Only JPG, PNG, or WEBP images are allowed.");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setImageError("Images must be 5MB or smaller.");
+      return;
+    }
+    if (product.images.length >= MAX_IMAGES) {
+      setImageError(`This product already has the maximum of ${MAX_IMAGES} images.`);
+      return;
+    }
+
+    setImageError(null);
+    setBusyProductId(product.id);
+    try {
+      await uploadAdminProductImage(product.id, file);
+      await reload();
+    } catch (uploadError) {
+      setImageError(uploadError instanceof ApiError ? uploadError.message : "Could not upload this image.");
+    } finally {
+      setBusyProductId(null);
+    }
+  }
+
+  async function handleDeleteImage(product: AdminProduct, imageId: number) {
+    setBusyProductId(product.id);
+    try {
+      await deleteAdminProductImage(product.id, imageId);
+      await reload();
+      toast.show("Image deleted");
+    } catch (deleteError) {
+      toast.show(deleteError instanceof ApiError ? deleteError.message : "Could not delete this image.", "error");
+    } finally {
+      setBusyProductId(null);
+    }
+  }
+
+  async function handleSetPrimaryImage(product: AdminProduct, imageId: number) {
+    setBusyProductId(product.id);
+    try {
+      await setAdminProductImagePrimary(product.id, imageId);
+      await reload();
+    } catch (primaryError) {
+      toast.show(primaryError instanceof ApiError ? primaryError.message : "Could not set primary image.", "error");
+    } finally {
+      setBusyProductId(null);
+    }
+  }
 
   function reload() {
     return Promise.all([getAdminProducts(), getAdminCategories()]).then(([productsList, categoriesList]) => {
@@ -154,6 +212,7 @@ export default function AdminProductsPage() {
               <th className="px-4 py-2">Name</th>
               <th className="px-4 py-2">Category</th>
               <th className="px-4 py-2">Price</th>
+              <th className="px-4 py-2">Images</th>
               <th className="px-4 py-2">Active</th>
               <th className="px-4 py-2">Featured</th>
               <th className="px-4 py-2" />
@@ -161,32 +220,105 @@ export default function AdminProductsPage() {
           </thead>
           <tbody>
             {products.map((product) => (
-              <tr key={product.id} className="border-b border-brand-cocoa/5 last:border-0">
-                <td className="px-4 py-2">{product.name}</td>
-                <td className="px-4 py-2">{product.category?.name ?? "—"}</td>
-                <td className="px-4 py-2">{formatSen(product.base_price_sen)}</td>
-                <td className="px-4 py-2">
-                  <input
-                    type="checkbox"
-                    checked={product.is_active}
-                    disabled={busyProductId === product.id}
-                    onChange={() => toggleActive(product)}
-                  />
-                </td>
-                <td className="px-4 py-2">
-                  <input
-                    type="checkbox"
-                    checked={product.is_featured}
-                    disabled={busyProductId === product.id}
-                    onChange={() => toggleFeatured(product)}
-                  />
-                </td>
-                <td className="px-4 py-2">
-                  <Button variant="danger" size="sm" onClick={() => handleDelete(product)}>
-                    Delete
-                  </Button>
-                </td>
-              </tr>
+              <Fragment key={product.id}>
+                <tr className="border-b border-brand-cocoa/5 last:border-0">
+                  <td className="px-4 py-2">{product.name}</td>
+                  <td className="px-4 py-2">{product.category?.name ?? "—"}</td>
+                  <td className="px-4 py-2">{formatSen(product.base_price_sen)}</td>
+                  <td className="px-4 py-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedImagesFor((current) => (current === product.id ? null : product.id))
+                      }
+                      className="text-brand-pink"
+                    >
+                      {product.images.length} · {expandedImagesFor === product.id ? "Hide" : "Manage"}
+                    </button>
+                  </td>
+                  <td className="px-4 py-2">
+                    <input
+                      type="checkbox"
+                      checked={product.is_active}
+                      disabled={busyProductId === product.id}
+                      onChange={() => toggleActive(product)}
+                    />
+                  </td>
+                  <td className="px-4 py-2">
+                    <input
+                      type="checkbox"
+                      checked={product.is_featured}
+                      disabled={busyProductId === product.id}
+                      onChange={() => toggleFeatured(product)}
+                    />
+                  </td>
+                  <td className="px-4 py-2">
+                    <Button variant="danger" size="sm" onClick={() => handleDelete(product)}>
+                      Delete
+                    </Button>
+                  </td>
+                </tr>
+                {expandedImagesFor === product.id && (
+                  <tr className="border-b border-brand-cocoa/5 bg-brand-cream/30">
+                    <td colSpan={7} className="px-4 py-3">
+                      <div className="flex flex-wrap items-center gap-3">
+                        {product.images.map((image) => (
+                          <div key={image.id} className="flex flex-col items-center gap-1">
+                            <div className="relative h-16 w-16 overflow-hidden rounded-lg border border-brand-cocoa/10">
+                              {image.url && (
+                                // eslint-disable-next-line @next/next/no-img-element
+                                <img src={image.url} alt={image.alt_text ?? ""} className="h-full w-full object-cover" />
+                              )}
+                              {image.is_primary && (
+                                <span className="absolute left-0 top-0 rounded-br bg-brand-gold px-1 text-[10px] font-semibold text-brand-cocoa">
+                                  Primary
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex gap-1">
+                              {!image.is_primary && (
+                                <button
+                                  type="button"
+                                  disabled={busyProductId === product.id}
+                                  onClick={() => handleSetPrimaryImage(product, image.id)}
+                                  className="text-xs text-brand-pink"
+                                >
+                                  Set primary
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                disabled={busyProductId === product.id}
+                                onClick={() => handleDeleteImage(product, image.id)}
+                                className="text-xs text-red-600"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+
+                        {product.images.length < MAX_IMAGES && (
+                          <label className="flex h-16 w-16 cursor-pointer items-center justify-center rounded-lg border border-dashed border-brand-cocoa/20 text-xs text-brand-cocoa/50">
+                            + Add
+                            <input
+                              type="file"
+                              accept="image/jpeg,image/png,image/webp"
+                              className="hidden"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (file) handleUploadImage(product, file);
+                                event.target.value = "";
+                              }}
+                            />
+                          </label>
+                        )}
+                      </div>
+                      {imageError && <p className="mt-2 text-xs text-red-600">{imageError}</p>}
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
             ))}
           </tbody>
         </table>

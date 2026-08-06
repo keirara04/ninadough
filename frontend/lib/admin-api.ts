@@ -1,5 +1,12 @@
 import { ApiError } from "./api";
-import type { AdminCategory, AdminOrder, AdminProduct } from "./admin-types";
+import type {
+  AdminCategory,
+  AdminDashboard,
+  AdminOrder,
+  AdminPreorderDate,
+  AdminProduct,
+  AdminTimeSlot,
+} from "./admin-types";
 import { useAdminStore } from "./admin-store";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
@@ -101,11 +108,15 @@ export async function updateAdminOrderStatus(id: number, status: string): Promis
 export async function reviewAdminPayment(
   paymentId: number,
   action: "approve" | "reject",
-  note?: string,
+  options?: { note?: string; rejectionMessage?: string },
 ): Promise<AdminOrder> {
   const { data } = await adminFetch<ApiResource<AdminOrder>>(`/payments/${paymentId}/review`, {
     method: "PATCH",
-    body: JSON.stringify({ action, note }),
+    body: JSON.stringify({
+      action,
+      note: options?.note,
+      rejection_message: options?.rejectionMessage,
+    }),
   });
   return data;
 }
@@ -170,4 +181,117 @@ export async function updateAdminProduct(id: string, input: Partial<AdminProduct
 
 export async function deleteAdminProduct(id: string): Promise<void> {
   await adminFetch(`/products/${id}`, { method: "DELETE" });
+}
+
+export interface AdminProductImage {
+  id: number;
+  url: string;
+  alt_text: string | null;
+  sort_order: number;
+  is_primary: boolean;
+}
+
+export async function uploadAdminProductImage(productId: string, file: File): Promise<AdminProductImage> {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const response = await fetch(`${API_URL}/admin/products/${productId}/images`, {
+    method: "POST",
+    headers: { Accept: "application/json", ...authHeaders() },
+    body: formData,
+  });
+
+  const { data } = await handle<ApiResource<AdminProductImage>>(response);
+  return data;
+}
+
+export async function deleteAdminProductImage(productId: string, imageId: number): Promise<void> {
+  await adminFetch(`/products/${productId}/images/${imageId}`, { method: "DELETE" });
+}
+
+export async function setAdminProductImagePrimary(productId: string, imageId: number): Promise<AdminProductImage> {
+  const { data } = await adminFetch<ApiResource<AdminProductImage>>(
+    `/products/${productId}/images/${imageId}/primary`,
+    { method: "PATCH" },
+  );
+  return data;
+}
+
+export async function getAdminPreorderDates(): Promise<AdminPreorderDate[]> {
+  return adminFetchAllPages<AdminPreorderDate>("/preorder-dates");
+}
+
+export interface AdminPreorderDateInput {
+  order_date?: string;
+  cutoff_at: string;
+  capacity_limit: number;
+  pickup_enabled?: boolean;
+  delivery_enabled?: boolean;
+  status?: "open" | "closed" | "full";
+  note_internal?: string | null;
+}
+
+export async function createAdminPreorderDate(input: AdminPreorderDateInput): Promise<AdminPreorderDate> {
+  const { data } = await adminFetch<ApiResource<AdminPreorderDate>>("/preorder-dates", {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return data;
+}
+
+export async function updateAdminPreorderDate(
+  id: number,
+  input: Partial<AdminPreorderDateInput>,
+): Promise<AdminPreorderDate> {
+  const { data } = await adminFetch<ApiResource<AdminPreorderDate>>(`/preorder-dates/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(input),
+  });
+  return data;
+}
+
+export async function getAdminTimeSlots(preorderDateId: number): Promise<AdminTimeSlot[]> {
+  const { data } = await adminFetch<{ data: AdminTimeSlot[] }>(`/preorder-dates/${preorderDateId}/time-slots`);
+  return data;
+}
+
+export interface AdminTimeSlotInput {
+  label: string;
+  starts_at: string;
+  ends_at: string;
+  fulfilment_method: "pickup" | "delivery" | "both";
+  capacity_limit: number;
+  is_active?: boolean;
+}
+
+export async function createAdminTimeSlot(
+  preorderDateId: number,
+  input: AdminTimeSlotInput,
+): Promise<AdminTimeSlot> {
+  const { data } = await adminFetch<ApiResource<AdminTimeSlot>>(`/preorder-dates/${preorderDateId}/time-slots`, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
+  return data;
+}
+
+export async function updateAdminTimeSlot(
+  preorderDateId: number,
+  timeSlotId: number,
+  input: Partial<AdminTimeSlotInput>,
+): Promise<AdminTimeSlot> {
+  const { data } = await adminFetch<ApiResource<AdminTimeSlot>>(
+    `/preorder-dates/${preorderDateId}/time-slots/${timeSlotId}`,
+    { method: "PATCH", body: JSON.stringify(input) },
+  );
+  return data;
+}
+
+export async function deactivateAdminTimeSlot(preorderDateId: number, timeSlotId: number): Promise<void> {
+  await adminFetch(`/preorder-dates/${preorderDateId}/time-slots/${timeSlotId}`, { method: "DELETE" });
+}
+
+export async function getAdminDashboard(): Promise<AdminDashboard> {
+  const { data } = await adminFetch<ApiResource<AdminDashboard>>("/dashboard");
+  return data;
 }

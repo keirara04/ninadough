@@ -21,6 +21,7 @@ export interface ProductVariant {
   name: string;
   price_sen: number;
   capacity_units: number;
+  is_available: boolean;
   option_values: string[];
 }
 
@@ -38,6 +39,7 @@ export interface Product {
   short_description: string | null;
   description: string | null;
   base_price_sen: number;
+  min_lead_time_days: number;
   allergen_information: string | null;
   is_featured: boolean;
   category: ProductCategory | null;
@@ -61,6 +63,17 @@ export interface DeliveryZone {
   description: string | null;
   delivery_fee_sen: number;
   minimum_order_sen: number | null;
+}
+
+export interface TimeSlot {
+  id: number;
+  label: string;
+  starts_at: string;
+  ends_at: string;
+  fulfilment_method: "pickup" | "delivery" | "both";
+  capacity_limit: number;
+  remaining_capacity: number;
+  is_active: boolean;
 }
 
 export interface CartQuoteLine {
@@ -107,12 +120,21 @@ export interface CheckoutQuoteInput {
   items: CheckoutItemInput[];
   preorder_date: string;
   fulfilment_method: "pickup" | "delivery";
-  delivery_zone_id?: number | null;
+  postcode?: string | null;
 }
 
-export interface CreateOrderInput extends CheckoutQuoteInput {
+export interface CreateOrderInput {
+  items: CheckoutItemInput[];
+  preorder_date: string;
+  time_slot_id?: number | null;
+  fulfilment_method: "pickup" | "delivery";
+  payment_method: "bank_transfer";
   checkout_channel: "website" | "whatsapp";
   delivery_address?: DeliveryAddressInput | null;
+  notes?: string | null;
+  card_message?: string | null;
+  allergies_note?: string | null;
+  hide_price_on_package?: boolean;
   idempotency_key: string;
   customer: {
     name: string;

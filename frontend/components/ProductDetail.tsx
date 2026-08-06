@@ -17,6 +17,7 @@ export function ProductDetail({ product }: { product: Product }) {
   const selectedVariant =
     product.variants.find((variant) => variant.id === selectedVariantId) ?? product.variants[0];
   const primaryImage = product.images.find((image) => image.is_primary) ?? product.images[0];
+  const allSoldOut = product.variants.every((variant) => !variant.is_available);
 
   if (!selectedVariant) {
     return (
@@ -74,7 +75,20 @@ export function ProductDetail({ product }: { product: Product }) {
             <p className="text-sm text-brand-cocoa/70">{product.short_description}</p>
           )}
 
-          <p className="text-2xl font-bold text-brand-cocoa">{formatSen(selectedVariant.price_sen)}</p>
+          {allSoldOut && (
+            <p className="rounded-full bg-brand-cocoa/10 px-3 py-1 text-xs font-medium text-brand-cocoa/70">
+              Currently sold out
+            </p>
+          )}
+
+          <div className="flex items-center gap-2">
+            <p className="text-2xl font-bold text-brand-cocoa">{formatSen(selectedVariant.price_sen)}</p>
+            {product.min_lead_time_days > 0 && (
+              <span className="rounded-full bg-brand-gold/15 px-2 py-0.5 text-xs font-medium text-brand-cocoa">
+                Pre-order {product.min_lead_time_days} day{product.min_lead_time_days === 1 ? "" : "s"} ahead
+              </span>
+            )}
+          </div>
 
           {product.variants.length > 1 && (
             <div>
@@ -84,14 +98,18 @@ export function ProductDetail({ product }: { product: Product }) {
                   <button
                     key={variant.id}
                     type="button"
+                    disabled={!variant.is_available}
                     onClick={() => setSelectedVariantId(variant.id)}
                     className={`min-h-9 rounded-full border px-3 text-sm font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink/50 focus-visible:ring-offset-2 ${
-                      variant.id === selectedVariant.id
-                        ? "border-brand-pink bg-brand-pink text-white"
-                        : "border-brand-cocoa/20 text-brand-cocoa/80"
+                      !variant.is_available
+                        ? "border-brand-cocoa/10 text-brand-cocoa/30 line-through"
+                        : variant.id === selectedVariant.id
+                          ? "border-brand-pink bg-brand-pink text-white"
+                          : "border-brand-cocoa/20 text-brand-cocoa/80"
                     }`}
                   >
                     {variant.option_values.join(" ") || variant.name}
+                    {!variant.is_available ? " · Sold out" : ""}
                   </button>
                 ))}
               </div>
@@ -100,6 +118,7 @@ export function ProductDetail({ product }: { product: Product }) {
 
           <Button
             className="self-start"
+            disabled={!selectedVariant.is_available}
             onClick={() => {
               addItem({
                 productId: product.id,
@@ -108,11 +127,12 @@ export function ProductDetail({ product }: { product: Product }) {
                 variantName: selectedVariant.option_values.join(" ") || selectedVariant.name,
                 unitPriceSen: selectedVariant.price_sen,
                 capacityUnitsEach: selectedVariant.capacity_units,
+                minLeadTimeDays: product.min_lead_time_days,
               });
               toast.show("Added to cart");
             }}
           >
-            Add to cart
+            {selectedVariant.is_available ? "Add to cart" : "Sold out"}
           </Button>
 
           {product.description && (

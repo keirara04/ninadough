@@ -15,7 +15,9 @@ class TimeSlotResource extends JsonResource
             'starts_at' => substr((string) $this->starts_at, 0, 5),
             'ends_at' => substr((string) $this->ends_at, 0, 5),
             'fulfilment_method' => $this->fulfilment_method,
+            'capacity_limit' => $this->capacity_limit,
             'remaining_capacity' => max(0, $this->capacity_limit - $this->reserved_capacity),
+            'is_active' => $this->is_active,
         ];
     }
 }

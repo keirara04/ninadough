@@ -58,12 +58,18 @@ export function PaymentProofUpload({
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(event) => setFile(event.target.files?.[0] ?? null)}
-          className="text-sm text-brand-cocoa"
-        />
+        <label className="flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-xl border border-dashed border-brand-cocoa/25 bg-brand-cream/40 px-4 py-3 text-sm text-brand-cocoa transition active:scale-[0.98]">
+          <span className="truncate">{file ? file.name : "Choose receipt photo or PDF"}</span>
+          <span className="shrink-0 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-brand-pink shadow-sm">
+            {file ? "Change" : "Browse"}
+          </span>
+          <input
+            type="file"
+            accept="image/jpeg,image/png,image/webp,application/pdf"
+            onChange={(event) => setFile(event.target.files?.[0] ?? null)}
+            className="sr-only"
+          />
+        </label>
 
         {error && <p className="text-sm text-red-600">{error}</p>}
 

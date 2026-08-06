@@ -21,6 +21,7 @@ class AdminOrderResource extends JsonResource
             'total_sen' => $this->total_sen,
             'rejection_message' => $this->rejection_message,
             'refund_required' => $this->refund_required,
+            'refund_note' => $this->refund_note,
             'notes' => $this->notes,
             'card_message' => $this->card_message,
             'allergies_note' => $this->allergies_note,

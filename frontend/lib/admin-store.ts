@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-interface AdminUser {
+export interface AdminUser {
   name: string;
   email: string;
   role: string;
@@ -25,3 +25,7 @@ export const useAdminStore = create<AdminState>()(
     { name: "ninadough-admin" },
   ),
 );
+
+export function isOwner(user: AdminUser | null): boolean {
+  return user?.role === "owner";
+}
